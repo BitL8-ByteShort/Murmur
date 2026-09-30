@@ -29,6 +29,9 @@ release qualification remains separate from this working local app.
   then back to installation, leaves exactly one instance across both known bundles.
   Both paths use the same stable development signing identity.
 - `/Applications/Murmur.app` passes `codesign --verify --deep --strict`.
+- Settings sidebar buttons accept clicks across the whole padded row, including
+  blank space beside the labels. The same blank-space click failed before the fix
+  and selected Appearance afterward. All five tabs were checked in the installed app.
 - Replaced the stale ad-hoc Accessibility entry with the installed, development-signed
   app through System Settings. Murmur recognizes access and the saved requirement
   matches the current app after rebuilding. An older microphone permission also

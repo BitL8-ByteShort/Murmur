@@ -31,6 +31,7 @@ struct SettingsView: View {
                             .foregroundStyle(page == item ? MurmurTheme.mint : .white.opacity(0.65))
                             .background(page == item ? MurmurTheme.mint.opacity(0.08) : .clear,
                                         in: RoundedRectangle(cornerRadius: 10))
+                            .contentShape(Rectangle())
                     }.buttonStyle(.plain)
                 }
                 Spacer()
