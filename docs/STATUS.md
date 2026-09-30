@@ -34,7 +34,7 @@ release qualification remains separate from this working local app.
   matches the current app after rebuilding. An older microphone permission also
   failed its code requirement; it was reset and the current app's consent completed.
   First-use microphone handling brings the app forward and labels the permission wait.
-- 25 core tests and 3 app checks pass, plus the Apple single-phrase and continuous
+- 26 core tests and 3 app checks pass, plus the Apple single-phrase and continuous
   integration checks. The previously accepted three optional engine checks remain valid;
   those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -58,6 +58,19 @@ release qualification remains separate from this working local app.
   reproduced `RecogRejected`. Removing that gate makes the regression pass, preserving
   both utterances and supporting a fresh session. Pause timing still uses input energy
   after recognition confirms speech.
+- The final packaged app captures two spoken passages across a ten-second quiet
+  gap in Keep Talking. Both remain in the completed transcript after Finish returns
+  capture to Mic off. The physical speaker/microphone check exposed repeated Apple
+  punctuation after pause finalization; the tracker now removes only a repeated
+  sentence-ending mark, preserving words, distinct punctuation and ellipses.
+  The regression fails before the change and passes afterward.
+- Correct sentence spacing and the punctuation correction are visible in the final
+  native transcript. A repeated automated start-from-bar typing attempt activates
+  Murmur instead of preserving the TextEdit destination, so it correctly keeps the
+  transcript available for copying. Earlier actual TextEdit insertion remains the
+  direct-typing evidence; the tool's per-app input is not a physical shortcut check.
+- Restored the original speaker mute setting after acoustic validation, retaining
+  MacBook Pro Speakers and the original 31.25% output volume.
 - Selecting the built-in microphone no longer resets an already-default audio graph.
   The original System default microphone preference was restored after validation.
 - Parakeet's actual Download button completed in the packaged app. It became
@@ -80,9 +93,6 @@ that gate. See [Apple's module documentation](https://developer.apple.com/docume
 
 ## Remaining qualification
 
-- The final native continuous test and corrected sentence-spacing check await the
-  Mac being unlocked. The fixed app is installed with the microphone off at launch.
-  Restore the speaker mute setting used for the acoustic test when the Mac unlocks.
 - Verify physical global shortcut presses and clipboard-paste fallback in other
   destination apps. The automation's per-app key delivery doesn't establish global
   Carbon dispatch. Registration, recorder, conflict and rollback checks are established.

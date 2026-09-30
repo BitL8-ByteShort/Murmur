@@ -2,6 +2,36 @@ import Foundation
 import Testing
 import MurmurCore
 
+@Test func repeatedSentencePunctuationAfterPauseDoesNotBecomeAnotherUtterance() throws {
+    let session = UUID()
+    var tracker = ProgressiveUtteranceTracker(sessionID: session)
+    var transcript = TranscriptAssembler(sessionID: session)
+    var finals: [String] = []
+    let updates: [(String, Double, Bool)] = [
+        ("The first thought.", 0, true),
+        (".", 2, false),
+        (".", 2, true),
+        (". I paused for a moment.", 12, false),
+        (". I paused for a moment.", 12, true)
+    ]
+    for (text, start, isFinal) in updates {
+        let result = tracker.update(text: text, start: start, isFinal: isFinal)
+        let utterance = try #require(result)
+        if let final = transcript.update(utterance) { finals.append(final) }
+        if text == "." { #expect(transcript.partialText.isEmpty) }
+    }
+    #expect(finals == ["The first thought.", "I paused for a moment."])
+    #expect(transcript.partialText.isEmpty)
+
+    // A deliberately spoken ellipsis and a different punctuation mark survive.
+    let ellipsisResult = tracker.update(text: "... Another thought.", start: 20, isFinal: true)
+    let ellipsis = try #require(ellipsisResult)
+    #expect(ellipsis.text == "... Another thought.")
+    let questionResult = tracker.update(text: "?", start: 25, isFinal: true)
+    let question = try #require(questionResult)
+    #expect(question.text == "?")
+}
+
 @Test func changingProvisionalTimestampsDoNotLeaveRepeatedWordsAfterFinalization() throws {
     let session = UUID()
     var tracker = ProgressiveUtteranceTracker(sessionID: session)
