@@ -19,7 +19,7 @@ release qualification remains separate from this working local app.
 | Pauses | Recognizer-confirmed speech plus input energy; Quick Talk pause and Keep Talking utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
-| Insertion | Actual microphone dictation typed into TextEdit; target captured at the start action and validated before each insertion; sentence-boundary spacing corrected |
+| Insertion | Earlier native TextEdit insertion established; web editors now receive ordinary keyboard paste, output requires text readback for an Inserted status; updated Codex composer confirmation pending |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
@@ -34,7 +34,7 @@ release qualification remains separate from this working local app.
   matches the current app after rebuilding. An older microphone permission also
   failed its code requirement; it was reset and the current app's consent completed.
   First-use microphone handling brings the app forward and labels the permission wait.
-- 26 core tests and 3 app checks pass, plus the Apple single-phrase and continuous
+- 26 core tests and 11 app checks pass, plus the previously accepted Apple single-phrase and continuous
   integration checks. The previously accepted three optional engine checks remain valid;
   those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -71,6 +71,17 @@ release qualification remains separate from this working local app.
   direct-typing evidence; the tool's per-app input is not a physical shortcut check.
 - Restored the original speaker mute setting after acoustic validation, retaining
   MacBook Pro Speakers and the original 31.25% output volume.
+- Chris reported that dictation into the Codex composer displayed Inserted but left
+  the field empty. The old output path trusted AX write acceptance and a posted paste
+  event without observing their effect. Regression checks reproduce both false successes.
+  Output now confirms the expected field text, uses normal keyboard paste for web
+  editors, keeps the clipboard available through readback, and refuses a duplicate
+  retry when the field changes unexpectedly. Unreadable destinations report Paste sent,
+  and recognized words without a delivery receipt report Transcript ready.
+- Eight insertion checks cover accepted no-op writes, verified native insertion without
+  double paste, web-editor selection with Unicode, no-op paste, unexpected edits,
+  focus changes, unreadable fields and recognition without any delivery. No microphone
+  or external app is used by these regression checks.
 - Selecting the built-in microphone no longer resets an already-default audio graph.
   The original System default microphone preference was restored after validation.
 - Parakeet's actual Download button completed in the packaged app. It became
@@ -93,6 +104,9 @@ that gate. See [Apple's module documentation](https://developer.apple.com/docume
 
 ## Remaining qualification
 
+- Confirm the updated paste path in the Codex composer. The computer-use tool
+  explicitly refuses the Codex app for safety reasons; this field cannot be
+  directly exercised by the agent. No successful post-fix Codex insertion is claimed.
 - Verify physical global shortcut presses and clipboard-paste fallback in other
   destination apps. The automation's per-app key delivery doesn't establish global
   Carbon dispatch. Registration, recorder, conflict and rollback checks are established.

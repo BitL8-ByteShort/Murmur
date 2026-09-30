@@ -6,7 +6,7 @@ Murmur is a native Mac dictation app. Put your cursor in an app, use a shortcut,
 and talk. A small bar appears at the bottom of the screen, responds to your voice,
 then gets out of the way.
 
-**Current state: a working local dictation development preview.** Apple Speech,
+**Current state: a local dictation development preview.** Apple Speech,
 Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
 recognition and actual typing into TextEdit have been verified locally. More
 hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
@@ -34,6 +34,11 @@ into other apps. Put the cursor in a text field before using the shortcut.
 Murmur checks that the same app and field are still focused. It refuses password
 fields and multiline terminal insertion. It never presses Enter or sends a message.
 Without this permission, or with **Copy only** enabled, use the transcript's Copy button.
+
+Murmur reports **Inserted** only after confirming the resulting text. Web editors
+receive ordinary paste. If an app doesn't expose enough information for confirmation,
+Murmur shows **Paste sent · check app**; check the destination before copying again.
+If insertion fails, your words remain in Murmur for copying.
 
 **Appearance → Try live microphone** tests the visuals without transcribing.
 Stop, Close, Cancel or Quit ends capture. The appearance sample with the mic off

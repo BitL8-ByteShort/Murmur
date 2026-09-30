@@ -30,6 +30,7 @@ final class DictationCoordinator {
     @ObservationIgnored private let insertion = TextInsertionService()
     @ObservationIgnored private var outputTask: Task<Void, Never>?
     @ObservationIgnored private var insertsIntoApp = false
+    @ObservationIgnored private var delivery = InsertionDeliverySummary()
     @ObservationIgnored private var loadedEngine: SpeechEngine?
     @ObservationIgnored private var lastActivityText = ""
     @ObservationIgnored private var transcriptID = UUID()
@@ -75,6 +76,7 @@ final class DictationCoordinator {
         let output = output ?? prepareOutput(copyOnly: preferences.copyOnly)
         insertion.begin(destination: output.destination)
         insertsIntoApp = output.destination != nil
+        delivery = .init()
         notice = output.notice
         assembler.reset(sessionID: id)
         endpoint = .init(mode: mode, silenceSeconds: preferences.silenceSeconds, inactivitySeconds: preferences.inactivitySeconds)
@@ -171,7 +173,14 @@ final class DictationCoordinator {
                     outputTask = Task { [weak self] in
                         await previous?.value
                         guard let self, self.sessionID == id, !Task.isCancelled else { return }
-                        do { try await self.insertion.insert(text, utteranceID: utterance.id) }
+                        do {
+                            let result = try await self.insertion.insert(text, utteranceID: utterance.id)
+                            guard self.sessionID == id else { return }
+                            self.delivery.record(result)
+                            if result == .sent {
+                                self.notice = "Paste sent. Check the destination; Murmur couldn't confirm the insertion. Your words remain available for copying."
+                            }
+                        }
                         catch { if self.sessionID == id { self.insertsIntoApp = false; self.fail(error.localizedDescription) } }
                     }
                 }
@@ -195,7 +204,7 @@ final class DictationCoordinator {
             try check(id)
             partial = assembler.partialText
             phase = .success
-            status = recoveryText.isEmpty ? "No speech detected" : insertsIntoApp ? "Inserted" : "Transcript ready"
+            status = delivery.status(hasWords: !recoveryText.isEmpty, hasPartial: !partial.isEmpty)
             if !partial.isEmpty { notice = "Some speech wasn't finalized. It's retained below for copying." }
             await backend?.suspend()
             onChange?()
@@ -211,7 +220,7 @@ final class DictationCoordinator {
     func cancel() {
         let retained = recoveryText
         sessionID = UUID()
-        capture.stop(); timer?.cancel(); worker?.cancel(); events?.cancel()
+        capture.stop(); timer?.cancel(); worker?.cancel(); events?.cancel(); outputTask?.cancel()
         wake?.finish(); eventSink?.finish()
         timer = nil; wake = nil; eventSink = nil
         transcript = retained; partial = ""; phase = .idle; status = "Mic off"

@@ -32,20 +32,25 @@ import MurmurCore
                       terminal: ["terminal", "iterm", "warp", "kitty", "alacritty"].contains { bundle.contains($0) })
     }
     func begin(destination: Target?) { target = destination; inserted.removeAll() }
-    func insert(_ text: String, utteranceID: UUID) async throws {
-        guard !text.isEmpty, !inserted.contains(utteranceID) else { return }
+    func insert(_ text: String, utteranceID: UUID) async throws -> TextInsertionResult {
+        guard !text.isEmpty, !inserted.contains(utteranceID) else { return .verified }
         guard let target else { throw OutputSafetyError.noEditableField }
         try validate(target, text: text)
-        let context = caretContext(target.element)
-        let output = InsertionSpacing.text(text, before: context.before, after: context.after)
-        var settable = DarwinBoolean(false)
-        if AXUIElementIsAttributeSettable(target.element, kAXSelectedTextAttribute as CFString, &settable) == .success,
-           settable.boolValue,
-           AXUIElementSetAttributeValue(target.element, kAXSelectedTextAttribute as CFString, output as CFString) == .success {
-            inserted.insert(utteranceID); return
-        }
-        try await paste(output, into: target)
+        var restoreClipboard: (() -> Void)?
+        defer { restoreClipboard?() }
+        let result = try await InsertionDelivery.deliver(text, prefersPaste: isWebEditor(target.element),
+            read: { self.snapshot(target.element) }, validate: { try self.validate(target, text: text) },
+            direct: { output in
+                var settable = DarwinBoolean(false)
+                guard AXUIElementIsAttributeSettable(target.element, kAXSelectedTextAttribute as CFString, &settable) == .success,
+                      settable.boolValue else { return false }
+                return AXUIElementSetAttributeValue(target.element, kAXSelectedTextAttribute as CFString, output as CFString) == .success
+            }, paste: { output in
+                restoreClipboard = try self.publishPasteboard(output)
+                try self.postPaste(into: target, text: output)
+            })
         inserted.insert(utteranceID)
+        return result
     }
     private func validate(_ target: Target, text: String) throws {
         try OutputSafety.validate(targetPID: target.pid,
@@ -67,16 +72,24 @@ import MurmurCore
         (attribute(element, kAXSubroleAttribute) as? String) == "AXSecureTextField" ||
         (attribute(element, "AXProtectedContent") as? Bool) == true
     }
-    private func caretContext(_ element: AXUIElement) -> (before: String, after: String) {
-        guard let text = attribute(element, kAXValueAttribute) as? String,
-              let value = attribute(element, kAXSelectedTextRangeAttribute), CFGetTypeID(value) == AXValueGetTypeID() else { return ("", "") }
+    private func snapshot(_ element: AXUIElement) -> EditableTextSnapshot? {
+        guard let text = attribute(element, kAXValueAttribute) as? String else { return nil }
         var range = CFRange()
-        guard AXValueGetValue(value as! AXValue, .cfRange, &range), range.location >= 0, range.length >= 0 else { return ("", "") }
-        let ns = text as NSString
-        guard range.location + range.length <= ns.length else { return ("", "") }
-        return (ns.substring(to: range.location), ns.substring(from: range.location + range.length))
+        guard let value = attribute(element, kAXSelectedTextRangeAttribute), CFGetTypeID(value) == AXValueGetTypeID(),
+              AXValueGetValue(value as! AXValue, .cfRange, &range) else { return .init(text: text, selection: nil) }
+        return .init(text: text, selection: NSRange(location: range.location, length: range.length))
     }
-    private func paste(_ text: String, into target: Target) async throws {
+    private func isWebEditor(_ element: AXUIElement) -> Bool {
+        var current: AXUIElement? = element
+        for _ in 0..<32 {
+            guard let node = current else { return false }
+            if (attribute(node, kAXRoleAttribute) as? String) == "AXWebArea" { return true }
+            guard let parent = attribute(node, kAXParentAttribute), CFGetTypeID(parent) == AXUIElementGetTypeID() else { return false }
+            current = (parent as! AXUIElement)
+        }
+        return false
+    }
+    private func publishPasteboard(_ text: String) throws -> () -> Void {
         let board = NSPasteboard.general
         var original: [[NSPasteboard.PasteboardType: Data]] = []
         for item in board.pasteboardItems ?? [] {
@@ -101,7 +114,7 @@ import MurmurCore
             throw OutputSafetyError.clipboardUnavailable
         }
         let lease = ClipboardLease(changeCount: board.changeCount, token: token)
-        defer {
+        return {
             if lease.owns(changeCount: board.changeCount, token: board.string(forType: marker)) {
                 board.clearContents()
                 let items = original.map { types in
@@ -112,13 +125,15 @@ import MurmurCore
                 if !items.isEmpty { board.writeObjects(items) }
             }
         }
+    }
+    private func postPaste(into target: Target, text: String) throws {
         try validate(target, text: text)
-        guard let source = CGEventSource(stateID: .combinedSessionState),
+        guard let source = CGEventSource(stateID: .privateState),
               let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
               let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else { throw OutputSafetyError.noEditableField }
         down.flags = .maskCommand; up.flags = .maskCommand
-        down.postToPid(target.pid); up.postToPid(target.pid)
-        // Keep the temporary text available while the destination handles its paste event.
-        try? await Task.sleep(for: .seconds(1))
+        // Route through normal keyboard delivery so web/Electron editors receive
+        // the paste command and input events, rather than a process-only event.
+        down.post(tap: .cghidEventTap); up.post(tap: .cghidEventTap)
     }
 }

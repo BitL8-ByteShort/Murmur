@@ -1,7 +1,7 @@
 import Foundation
 
 public enum OutputSafetyError: Error, LocalizedError, Equatable {
-    case targetChanged, secureField, terminalNewline, permissionRequired, noEditableField, clipboardUnavailable
+    case targetChanged, secureField, terminalNewline, permissionRequired, noEditableField, clipboardUnavailable, insertionNotConfirmed
     public var errorDescription: String? {
         switch self {
         case .targetChanged: "The destination changed. Your words are saved in Murmur for copying."
@@ -10,6 +10,7 @@ public enum OutputSafetyError: Error, LocalizedError, Equatable {
         case .permissionRequired: "Allow Murmur in Accessibility to dictate into other apps. Your words are saved for copying."
         case .noEditableField: "Choose a text field in another app before starting. Your words are saved for copying."
         case .clipboardUnavailable: "The clipboard couldn't be preserved. Your words are saved for copying."
+        case .insertionNotConfirmed: "The app didn't confirm the text was inserted. Your words are saved in Murmur for copying."
         }
     }
 }
