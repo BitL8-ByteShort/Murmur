@@ -8,7 +8,7 @@ Native scaffold and implementation plan. This is not a finished voice transcribe
 
 | Area | Current state |
 | --- | --- |
-| Repository | Local Git repo on main; GitHub must remain private until Chris explicitly approves public visibility |
+| Repository | [BitL8-ByteShort/Murmur](https://github.com/BitL8-ByteShort/Murmur), verified PRIVATE; main tracks origin/main |
 | Native app | SwiftUI settings, menu bar entry, buildable .app bundle |
 | Visuals | Waveform, soft Aura, layered Aura Ring; static labeled appearance sample |
 | Floating bar | Nonactivating bottom-center panel; show/close and persistent pin setting |
@@ -33,6 +33,8 @@ Toolchain: Swift 6.4, Xcode 27.0, arm64 macOS environment.
   Waveform initial preview, Aura and Aura Ring selectable; ring's layered colored
   shape and empty center visually checked. Planned features remain labeled.
 - Codex Run action points to the project-local build/quit/relaunch script.
+- GitHub repository created and pushed; API reports `isPrivate: true`, `visibility: PRIVATE`, default branch `main`.
+- Initial scaffold commit: `47d8ed0`. Documentation checkpoint follows that commit.
 
 Live microphone authorization/capture, stop/disconnect behavior, floating panel
 placement across screens and actual focus preservation remain hands-on checks.

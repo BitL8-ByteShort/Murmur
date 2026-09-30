@@ -66,5 +66,6 @@ and microphone meter bounds. They don't establish speech or insertion readiness.
 - [Architecture and Teleprompter reuse](docs/ARCHITECTURE.md)
 - [Development guide](docs/DEVELOPMENT.md)
 
-The GitHub repo must stay **private** until Chris explicitly approves making it public.
+The [GitHub repo](https://github.com/BitL8-ByteShort/Murmur) is **private** and must stay
+that way until Chris explicitly approves making it public.
 Distribution licensing and pricing haven't been selected.
