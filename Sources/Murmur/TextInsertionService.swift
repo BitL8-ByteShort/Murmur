@@ -17,8 +17,7 @@ import MurmurCore
         _ = AXIsProcessTrustedWithOptions(options)
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
-    func begin() throws {
-        target = nil; inserted.removeAll()
+    func captureDestination() throws -> Target {
         guard Self.permissionGranted else { throw OutputSafetyError.permissionRequired }
         guard let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
               let element = focusedElement(app.processIdentifier) else { throw OutputSafetyError.noEditableField }
@@ -29,9 +28,10 @@ import MurmurCore
             throw OutputSafetyError.noEditableField
         }
         let bundle = app.bundleIdentifier?.lowercased() ?? ""
-        target = Target(pid: app.processIdentifier, element: element,
-                        terminal: ["terminal", "iterm", "warp", "kitty", "alacritty"].contains { bundle.contains($0) })
+        return Target(pid: app.processIdentifier, element: element,
+                      terminal: ["terminal", "iterm", "warp", "kitty", "alacritty"].contains { bundle.contains($0) })
     }
+    func begin(destination: Target?) { target = destination; inserted.removeAll() }
     func insert(_ text: String, utteranceID: UUID) async throws {
         guard !text.isEmpty, !inserted.contains(utteranceID) else { return }
         guard let target else { throw OutputSafetyError.noEditableField }

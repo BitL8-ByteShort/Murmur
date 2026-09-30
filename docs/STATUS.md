@@ -14,12 +14,12 @@ release qualification remains separate from this working local app.
 | Visuals | Four styles: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; input requests 512-frame tap, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Response strength, still/reduced motion, display selection, bottom offset, independent pin/show/close |
 | Crash repair | Original microphone callback moved outside MainActor; preview and dictation callback worker regressions pass |
-| Capture | Real microphone start verified in packaged app; silence timeout returned it to Mic off without a crash |
+| Capture | Packaged app recognizes generated speech played through the physical speakers into the built-in microphone; Quick Talk returns to Mic off without a crash |
 | Recognition | Apple Speech, Parakeet, Moonshine and Whisper Turbo integrated; local fixture checks described below |
 | Pauses | Recognizer-confirmed speech plus input energy; Quick Talk pause and Keep Talking utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
-| Insertion | Pinned target app/field, secure-field refusal, AX insertion or clipboard-preserving paste, no Enter; Accessibility corrected, live typing checks pending microphone permission |
+| Insertion | Actual microphone dictation typed into TextEdit; target captured at the start action and validated before each insertion; sentence-boundary spacing corrected |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
@@ -32,10 +32,11 @@ release qualification remains separate from this working local app.
 - Replaced the stale ad-hoc Accessibility entry with the installed, development-signed
   app through System Settings. Murmur recognizes access and the saved requirement
   matches the current app after rebuilding. An older microphone permission also
-  failed its code requirement; it was reset for a fresh request. First-use microphone
-  handling now brings the app forward and explicitly labels the permission wait.
-- 23 core tests and 3 app checks pass in the ordinary suite. The previously accepted
-  Apple fixture and three optional engine checks remain valid; those engines were unchanged.
+  failed its code requirement; it was reset and the current app's consent completed.
+  First-use microphone handling brings the app forward and labels the permission wait.
+- 25 core tests and 3 app checks pass, plus the Apple single-phrase and continuous
+  integration checks. The previously accepted three optional engine checks remain valid;
+  those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
   endpoints, particle bounds/response/reduced motion, recovery across attempts,
   cancellation while previous preparation cleans up, shortcut conflicts/repeat/rollback,
@@ -48,6 +49,17 @@ release qualification remains separate from this working local app.
   The dictation tap converts 48 kHz audio into queued 16 kHz packets off the UI actor.
 - Apple recognizes the generated sentence containing “local dictation” and
   “quick brown fox,” with partials, finals and a detected pause.
+- Native microphone dictation recognized the same sentence and inserted its words
+  into the scratch TextEdit document, without pressing Enter. Quick Talk stopped
+  capture automatically. The live check exposed sentence spacing and moving
+  provisional timestamp issues; both now have regression coverage.
+- Apple's optional VAD module rejected quiet live audio between phrases. A regression
+  with 160-sample packets, a ten-second quiet background gap and repeated finalization
+  reproduced `RecogRejected`. Removing that gate makes the regression pass, preserving
+  both utterances and supporting a fresh session. Pause timing still uses input energy
+  after recognition confirms speech.
+- Selecting the built-in microphone no longer resets an already-default audio graph.
+  The original System default microphone preference was restored after validation.
 - Parakeet's actual Download button completed in the packaged app. It became
   available for Use model while Apple remained selected.
 - Parakeet, Moonshine and Whisper each recognize the generated sentence twice across an
@@ -60,18 +72,20 @@ release qualification remains separate from this working local app.
   showed nonzero levels without the original crash.
 - GitHub API confirms `isPrivate: true`, `visibility: PRIVATE`.
 
-The fixture is generated speech, not a human recording. Pure safety tests do not
-establish insertion in TextEdit, a browser, an editor, a terminal or a chat app.
-Apple's SpeechDetector result stream currently supports error reporting only;
-the app therefore times pauses using input energy after recognition confirms words.
-See [Apple's module documentation](https://developer.apple.com/documentation/speech/speechdetector).
+The fixture and live speaker test use generated speech, not human dictation.
+TextEdit insertion is established; browser, editor, terminal and chat-app insertion
+still need native checks. Apple's optional VAD gate can discard audio and its result
+stream currently supports error handling only. Murmur uses the transcriber without
+that gate. See [Apple's module documentation](https://developer.apple.com/documentation/speech/speechdetector).
 
 ## Remaining qualification
 
-- Complete the current app's microphone consent, then verify global hotkeys, focus
-  and actual text insertion with clipboard restoration in real destination apps.
-  The computer-use tool cannot operate the macOS permission-dialog app, and the
-  Mac locked during qualification. It must be unlocked for native checks to resume.
+- The final native continuous test and corrected sentence-spacing check await the
+  Mac being unlocked. The fixed app is installed with the microphone off at launch.
+  Restore the speaker mute setting used for the acoustic test when the Mac unlocks.
+- Verify physical global shortcut presses and clipboard-paste fallback in other
+  destination apps. The automation's per-app key delivery doesn't establish global
+  Carbon dispatch. Registration, recorder, conflict and rollback checks are established.
 - Hands-on human dictation, interruption/reconnect, sleep/wake, multi-display,
   full-screen Spaces and very long Keep Talking sessions.
 - Optional download cancellation and deletion/re-download.

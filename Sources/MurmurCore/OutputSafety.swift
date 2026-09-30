@@ -35,8 +35,12 @@ public enum InsertionSpacing {
             guard let character else { return false }
             return character.isLetter || character.isNumber
         }
-        let prefix = word(before.last) && word(text.first) ? " " : ""
-        let suffix = word(text.last) && word(after.first) ? " " : ""
+        func boundary(_ left: Character?, _ right: Character?) -> Bool {
+            guard let left, word(right) else { return false }
+            return word(left) || ".!?;:,)]}…".contains(left)
+        }
+        let prefix = boundary(before.last, text.first) ? " " : ""
+        let suffix = boundary(text.last, after.first) ? " " : ""
         return prefix + text + suffix
     }
 }

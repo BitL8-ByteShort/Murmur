@@ -28,3 +28,10 @@ import Testing
     #expect(InsertionSpacing.text("hello", before: "", after: "") == "hello")
     #expect(InsertionSpacing.text("hello", before: "\n", after: ".") == "hello")
 }
+
+@Test func finalizedSentencesHaveSpacesAtInsertionBoundaries() {
+    #expect(InsertionSpacing.text("This is a test.", before: "Hello, Chris.", after: "") == " This is a test.")
+    #expect(InsertionSpacing.text("Hello!", before: "", after: "Next sentence.") == "Hello! ")
+    #expect(InsertionSpacing.text("Next", before: "Already spaced. ", after: "") == "Next")
+    #expect(InsertionSpacing.text("inside", before: "(", after: ")") == "inside")
+}

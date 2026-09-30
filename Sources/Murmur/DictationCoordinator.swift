@@ -55,18 +55,27 @@ final class DictationCoordinator {
     var isActive: Bool { phase.isActive }
     var recoveryText: String { [transcript, partial].filter { !$0.isEmpty }.joined(separator: " ") }
 
-    func start(mode: CaptureMode, preferences: Preferences) async {
+    struct PreparedOutput {
+        let destination: TextInsertionService.Target?
+        let notice: String?
+    }
+    func prepareOutput(copyOnly: Bool) -> PreparedOutput {
+        guard !copyOnly else { return .init(destination: nil, notice: nil) }
+        do { return .init(destination: try insertion.captureDestination(), notice: nil) }
+        catch { return .init(destination: nil, notice: error.localizedDescription) }
+    }
+
+    func start(mode: CaptureMode, preferences: Preferences, output: PreparedOutput? = nil) async {
         guard !isActive else { return }
         let id = UUID(); sessionID = id
         recovery.save(sessionID: transcriptID, text: recoveryText, createdAt: transcriptDate)
         transcriptID = id; transcriptDate = Date()
         self.mode = mode; phase = .preparing; status = "Preparing \(preferences.engine.title)…"
         transcript = ""; partial = ""; notice = nil; meter = .silence
-        insertsIntoApp = false
-        if !preferences.copyOnly {
-            do { try insertion.begin(); insertsIntoApp = true }
-            catch { notice = error.localizedDescription }
-        }
+        let output = output ?? prepareOutput(copyOnly: preferences.copyOnly)
+        insertion.begin(destination: output.destination)
+        insertsIntoApp = output.destination != nil
+        notice = output.notice
         assembler.reset(sessionID: id)
         endpoint = .init(mode: mode, silenceSeconds: preferences.silenceSeconds, inactivitySeconds: preferences.inactivitySeconds)
         speechDetected = false; flushing = false; lastActivityText = ""

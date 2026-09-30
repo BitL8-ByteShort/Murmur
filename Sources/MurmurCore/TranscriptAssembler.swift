@@ -13,14 +13,15 @@ public struct TranscriptAssembler: Sendable {
         guard utterance.sessionID == sessionID, !committed.contains(utterance.id),
               utterance.revision >= (revisions[utterance.id] ?? -1) else { return nil }
         let text = utterance.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
+        guard !utterance.isFinal || !text.isEmpty else { return nil }
         if revisions[utterance.id] == nil { order.append(utterance.id) }
         revisions[utterance.id] = utterance.revision
         if utterance.isFinal {
             committed.insert(utterance.id); partials.removeValue(forKey: utterance.id)
-            return text
+            return text.isEmpty ? nil : text
         }
-        partials[utterance.id] = text
+        if text.isEmpty { partials.removeValue(forKey: utterance.id) }
+        else { partials[utterance.id] = text }
         return nil
     }
 }

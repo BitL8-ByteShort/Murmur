@@ -69,7 +69,8 @@ final class AppModel {
         }
         stopMonitor(); manuallyOpened = false
         let preferences = preferences
-        dictationTask = Task { await dictation.start(mode: mode, preferences: preferences) }
+        let output = dictation.prepareOutput(copyOnly: preferences.copyOnly)
+        dictationTask = Task { await dictation.start(mode: mode, preferences: preferences, output: output) }
     }
     func cancelDictation() { dictationTask?.cancel(); dictation.cancel() }
     func refreshModels() { installedModels = Set(SpeechEngine.allCases.filter { $0 != .apple && LocalModelStore.installed($0) }) }

@@ -15,7 +15,8 @@ private final class EventCollector: @unchecked Sendable {
 func downloadedBackendSupportsTwoContinuousUtterancesAndWarmRestart() async throws {
     let name = ProcessInfo.processInfo.environment["MURMUR_MODEL_ENGINE"]!
     let engine = SpeechEngine(rawValue: name)!
-    #expect(LocalModelStore.installed(engine))
+    if engine == .apple { #expect(await AppleSpeechBackend.assetsInstalled(locale: "en_US")) }
+    else { #expect(LocalModelStore.installed(engine)) }
     let base: any SpeechBackend = switch engine {
     case .apple: AppleSpeechBackend()
     case .parakeet: ParakeetBackend()
@@ -26,20 +27,34 @@ func downloadedBackendSupportsTwoContinuousUtterancesAndWarmRestart() async thro
     let events = EventCollector(), session = UUID()
     try await backend.prepare(sessionID: session, locale: "en_US") { events.append($0) }
     let fixture = ProcessInfo.processInfo.environment["MURMUR_FIXTURE_PATH"]!
+    let packetSize: AVAudioFrameCount = engine == .apple ? 160 : 1600
+    let packetDelay = engine == .apple ? 10 : 100
     for take in 0..<2 {
         let file = try AVAudioFile(forReading: URL(fileURLWithPath: fixture))
         while file.framePosition < file.length {
-            let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: 1600)!
+            let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: packetSize)!
             try file.read(into: buffer)
             let samples = Array(UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength)))
             try await backend.accept(.init(sessionID: session, samples: samples))
-            try await Task.sleep(for: .milliseconds(100))
+            try await Task.sleep(for: .milliseconds(packetDelay))
         }
         for _ in 0..<15 {
             try await backend.accept(.init(sessionID: session, samples: Array(repeating: 0, count: 1600)))
             try await Task.sleep(for: .milliseconds(100))
         }
-        if take == 0 { try await backend.flush() } else { try await backend.finish() }
+        if take == 0 {
+            try await backend.flush()
+            if engine == .apple {
+                // Match small live packets and quiet room noise between thoughts.
+                let quiet = (0..<Int(packetSize)).map { Float(sin(Double($0) * 0.27) * 0.001) }
+                for gap in 0..<(10_000 / packetDelay) {
+                    try await backend.accept(.init(sessionID: session, samples: quiet))
+                    try await Task.sleep(for: .milliseconds(packetDelay))
+                    if gap > 0, gap % (1200 / packetDelay) == 0 { try await backend.flush() }
+                }
+                try await backend.flush()
+            }
+        } else { try await backend.finish() }
     }
     var assembler = TranscriptAssembler(sessionID: session), finals: [String] = []
     for event in events.snapshot {
@@ -101,6 +116,8 @@ func appleBackendRecognizesRealAudioAndVADWithoutOpeningMicrophone() async throw
     let text = finalized.joined(separator: " ").lowercased()
     #expect(text.contains("local dictation"))
     #expect(text.contains("quick brown fox"))
+    #expect(assembler.partialText.isEmpty)
+    #expect(text.components(separatedBy: "hello").count == 2)
     #expect(detectedSpeech)
     #expect(detectedPause)
     #expect(hadPartial)

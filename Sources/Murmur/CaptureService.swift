@@ -25,9 +25,16 @@ final class CaptureService {
         if !microphoneID.isEmpty {
             guard var device = InputDeviceStore.microphones().first(where: { $0.id == microphoneID })?.deviceID,
                   let unit = input.audioUnit else { throw SpeechFailure.unavailable("The selected microphone isn't connected.") }
-            let status = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
-                                             &device, UInt32(MemoryLayout<AudioDeviceID>.size))
-            guard status == noErr else { throw SpeechFailure.unavailable("Couldn't select that microphone (\(status)).") }
+            var current = AudioDeviceID(0), size = UInt32(MemoryLayout<AudioDeviceID>.size)
+            let readStatus = AudioUnitGetProperty(unit, kAudioOutputUnitProperty_CurrentDevice,
+                                                 kAudioUnitScope_Global, 0, &current, &size)
+            // Setting the already-selected input needlessly rebuilds the graph and
+            // can deliver a configuration-change notification after capture starts.
+            if device != InputDeviceStore.defaultInputDevice(), (readStatus != noErr || current != device) {
+                let status = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
+                                                 &device, UInt32(MemoryLayout<AudioDeviceID>.size))
+                guard status == noErr else { throw SpeechFailure.unavailable("Couldn't select that microphone (\(status)).") }
+            }
         }
         let natural = input.outputFormat(forBus: 0)
         guard natural.sampleRate > 0, natural.channelCount > 0,

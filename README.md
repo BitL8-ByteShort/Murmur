@@ -7,9 +7,9 @@ and talk. A small bar appears at the bottom of the screen, responds to your voic
 then gets out of the way.
 
 **Current state: a working local dictation development preview.** Apple Speech,
-Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Text insertion
-is implemented but requires macOS Accessibility permission; its hands-on checks
-are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
+Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
+recognition and actual typing into TextEdit have been verified locally. More
+hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
 
 - **Quick Talk:** say something, pause, and finish. Default shortcut: Control–Option–Space.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
