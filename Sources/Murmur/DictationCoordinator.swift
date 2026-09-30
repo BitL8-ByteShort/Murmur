@@ -40,6 +40,9 @@ final class DictationCoordinator {
         self.backendFactory = backendFactory
         capture.onMeter = { [weak self] in self?.meter = $0 }
         capture.onFailure = { [weak self] in self?.fail($0) }
+        capture.onPreparing = { [weak self] message in
+            self?.status = message; self?.onChange?()
+        }
     }
     private static func makeBackend(_ engine: SpeechEngine) -> any SpeechBackend {
         switch engine {

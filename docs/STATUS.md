@@ -19,7 +19,7 @@ release qualification remains separate from this working local app.
 | Pauses | Recognizer-confirmed speech plus input energy; Quick Talk pause and Keep Talking utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
-| Insertion | Pinned target app/field, secure-field refusal, AX insertion or clipboard-preserving paste, no Enter; live app checks pending Accessibility permission |
+| Insertion | Pinned target app/field, secure-field refusal, AX insertion or clipboard-preserving paste, no Enter; Accessibility corrected, live typing checks pending microphone permission |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
@@ -29,6 +29,11 @@ release qualification remains separate from this working local app.
   then back to installation, leaves exactly one instance across both known bundles.
   Both paths use the same stable development signing identity.
 - `/Applications/Murmur.app` passes `codesign --verify --deep --strict`.
+- Replaced the stale ad-hoc Accessibility entry with the installed, development-signed
+  app through System Settings. Murmur recognizes access and the saved requirement
+  matches the current app after rebuilding. An older microphone permission also
+  failed its code requirement; it was reset for a fresh request. First-use microphone
+  handling now brings the app forward and explicitly labels the permission wait.
 - 23 core tests and 3 app checks pass in the ordinary suite. The previously accepted
   Apple fixture and three optional engine checks remain valid; those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -63,8 +68,10 @@ See [Apple's module documentation](https://developer.apple.com/documentation/spe
 
 ## Remaining qualification
 
-- Enable Accessibility for the installed app; verify global hotkeys, focus and
-  actual text insertion with clipboard restoration in real destination apps.
+- Complete the current app's microphone consent, then verify global hotkeys, focus
+  and actual text insertion with clipboard restoration in real destination apps.
+  The computer-use tool cannot operate the macOS permission-dialog app, and the
+  Mac locked during qualification. It must be unlocked for native checks to resume.
 - Hands-on human dictation, interruption/reconnect, sleep/wake, multi-display,
   full-screen Spaces and very long Keep Talking sessions.
 - Optional download cancellation and deletion/re-download.

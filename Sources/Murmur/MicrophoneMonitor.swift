@@ -23,7 +23,7 @@ final class MicrophoneMonitor {
         stop()
         lastPublication = 0
         let token = generation
-        let allowed = await AVCaptureDevice.requestAccess(for: .audio)
+        let allowed = await MicrophonePermission.request()
         guard token == generation else { return false }
         guard allowed else { throw MonitorError.denied }
         let input = engine.inputNode

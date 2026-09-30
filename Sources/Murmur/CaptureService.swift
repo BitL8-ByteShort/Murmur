@@ -9,12 +9,15 @@ final class CaptureService {
     private var token = UUID()
     var onMeter: ((MeterFrame) -> Void)?
     var onFailure: ((String) -> Void)?
+    var onPreparing: ((String) -> Void)?
 
     func start(sessionID: UUID, microphoneID: String, inbox: AudioInbox,
                wake: AsyncStream<Void>.Continuation) async throws {
         stop()
         let generation = token
-        let permitted = await AVCaptureDevice.requestAccess(for: .audio)
+        let permitted = await MicrophonePermission.request { [weak self] in
+            self?.onPreparing?("Waiting for microphone permission…")
+        }
         guard generation == token else { throw CancellationError() }
         guard permitted else { throw SpeechFailure.unavailable("Enable Murmur under System Settings → Privacy & Security → Microphone.") }
         let engine = AVAudioEngine()
