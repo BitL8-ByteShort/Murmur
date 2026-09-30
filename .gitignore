@@ -1,0 +1,14 @@
+.DS_Store
+.build/
+.swiftpm/
+build/
+*.xcuserstate
+xcuserdata/
+*.mlmodelc/
+*.mlpackage/
+*.onnx
+*.gguf
+*.wav
+*.m4a
+.env
+.env.*
