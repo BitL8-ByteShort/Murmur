@@ -40,8 +40,11 @@ final class OverlayController {
             let pointer = NSEvent.mouseLocation
             screen = NSScreen.screens.first { $0.frame.contains(pointer) } ?? NSScreen.main
         }
+        if !model.preferences.displayID.isEmpty {
+            screen = NSScreen.screens.first { String(describing: $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] ?? "") == model.preferences.displayID } ?? screen
+        }
         guard let screen else { return }
-        let expanded = model.monitoring || model.preparing
+        let expanded = model.isExpanded
         let size: CGSize
         if expanded {
             size = switch model.preferences.style {
@@ -53,7 +56,8 @@ final class OverlayController {
         let visible = screen.visibleFrame
         let width = min(size.width, visible.width - 24)
         let height = min(size.height, visible.height - 24)
-        panel.setFrame(CGRect(x: visible.midX - width / 2, y: visible.minY + 18,
+        let offset = min(max(0, model.preferences.bottomOffset), max(0, visible.height - height - 12))
+        panel.setFrame(CGRect(x: visible.midX - width / 2, y: visible.minY + offset,
                               width: width, height: height), display: true)
         panel.orderFrontRegardless()
     }
@@ -64,18 +68,23 @@ struct OverlayView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     var body: some View {
         Group {
-            if model.monitoring || model.preparing {
+            if model.isExpanded {
                 VStack(spacing: 8) {
-                    VoiceVisualizer(style: model.preferences.style, frame: model.meter,
-                                    reduceMotion: model.preferences.reduceMotion || systemReduceMotion)
+                    VoiceVisualizer(style: model.preferences.style, frame: model.visualizerFrame,
+                                    reduceMotion: model.preferences.reduceMotion || systemReduceMotion,
+                                    intensity: model.preferences.visualizerIntensity, still: model.preferences.stillVisualizer)
                         .frame(height: model.preferences.style == .waveform ? 24 : model.preferences.style == .aura ? 108 : 172)
                         .padding(.horizontal, 18)
                     HStack(spacing: 10) {
                         Circle().fill(MurmurTheme.mint).frame(width: 5, height: 5)
-                        Text(model.preparing ? "Preparing…" : "Mic preview").font(.system(size: 11, weight: .medium))
+                        Text(model.status).font(.system(size: 10, weight: .medium)).lineLimit(1)
                         Spacer(minLength: 0)
-                        Button { model.stopMonitor() } label: { Image(systemName: "stop.fill") }
-                            .help("Stop microphone preview")
+                        Button {
+                            if model.dictation.phase == .preparing { model.cancelDictation() }
+                            else if model.dictation.isActive { Task { await model.dictation.finish() } }
+                            else { model.stopMonitor() }
+                        } label: { Image(systemName: "stop.fill") }
+                            .help("Finish dictation or stop preview")
                         Button { model.closeBar() } label: { Image(systemName: "xmark") }
                             .help("Close bar and stop microphone")
                     }
@@ -84,9 +93,9 @@ struct OverlayView: View {
                 .padding(.vertical, 11)
             } else {
                 HStack(spacing: 8) {
-                    Button { model.startMonitor() } label: {
+                    Button { model.toggleDictation(.quickTalk) } label: {
                         Image(systemName: "waveform").foregroundStyle(MurmurTheme.mint)
-                    }.help("Start live microphone preview")
+                    }.help("Start Quick Talk")
                     Text("Murmur").font(.system(size: 11, weight: .semibold))
                     Button { model.closeBar() } label: { Image(systemName: "xmark").font(.system(size: 8)) }
                         .help("Close voice bar")

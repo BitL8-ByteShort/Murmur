@@ -17,9 +17,25 @@ final class AppModel {
     var preparing = false
     var manuallyOpened = false
     var notice: String?
+    var dictation = DictationCoordinator()
+    var locales = ["en_US"]
+    var microphones: [Microphone] = []
+    var installingApple = false
+    var recordingShortcut: ShortcutAction? { didSet { shortcutRecordingChanged?(recordingShortcut != nil) } }
+    var shortcutError: String?
+    var installedModels = Set<SpeechEngine>()
+    var downloadingModel: SpeechEngine?
+    var downloadStatus = ""
+    var accessibilityGranted = TextInsertionService.permissionGranted
+    @ObservationIgnored private var downloadTask: Task<Void, Never>?
+    @ObservationIgnored private var downloadID = UUID()
+    @ObservationIgnored var rebindShortcuts: (([ShortcutAction: ShortcutBinding]) throws -> Void)?
+    @ObservationIgnored var updateCaptureHotkey: ((Bool) -> Void)?
+    @ObservationIgnored var shortcutRecordingChanged: ((Bool) -> Void)?
     @ObservationIgnored var onOverlayChange: (() -> Void)?
     @ObservationIgnored private let microphone = MicrophoneMonitor()
     @ObservationIgnored private var requestID = UUID()
+    @ObservationIgnored private var dictationTask: Task<Void, Never>?
 
     init() {
         if let data = UserDefaults.standard.data(forKey: "murmur.preferences.v1"),
@@ -32,12 +48,93 @@ final class AppModel {
             self.stopMonitor()
             self.notice = "Microphone configuration changed. Start the preview again when your input is ready."
         }
+        dictation.onChange = { [weak self] in
+            guard let self else { return }
+            self.updateCaptureHotkey?(self.dictation.isActive); self.onOverlayChange?()
+        }
+        microphones = InputDeviceStore.microphones()
+        refreshModels()
+        Task { locales = await AppleSpeechBackend.supportedLocales() }
     }
-    var barVisible: Bool { preferences.keepBarVisible || manuallyOpened || monitoring || preparing }
-    var status: String { preparing ? "Preparing microphone…" : monitoring ? "Live microphone preview" : "Mic off" }
+    var barVisible: Bool { preferences.keepBarVisible || manuallyOpened || monitoring || preparing || dictation.phase != .idle }
+    var isExpanded: Bool { monitoring || preparing || dictation.phase != .idle }
+    var visualizerFrame: MeterFrame { dictation.isActive ? dictation.meter : meter }
+    var status: String { preparing ? "Preparing microphone…" : monitoring ? "Live microphone preview" : dictation.status }
+
+    func toggleDictation(_ mode: CaptureMode) {
+        if dictation.isActive {
+            if dictation.phase == .preparing { cancelDictation() }
+            else { Task { await dictation.finish() } }
+            return
+        }
+        stopMonitor(); manuallyOpened = false
+        let preferences = preferences
+        dictationTask = Task { await dictation.start(mode: mode, preferences: preferences) }
+    }
+    func cancelDictation() { dictationTask?.cancel(); dictation.cancel() }
+    func refreshModels() { installedModels = Set(SpeechEngine.allCases.filter { $0 != .apple && LocalModelStore.installed($0) }) }
+    func refreshPermissions() { accessibilityGranted = TextInsertionService.permissionGranted; refreshModels() }
+    func download(_ engine: SpeechEngine) {
+        guard downloadingModel == nil else { return }
+        downloadingModel = engine; downloadStatus = "Starting…"; notice = nil
+        let id = UUID(); downloadID = id
+        downloadTask = Task {
+            do {
+                try await LocalModelStore.download(engine) { [weak model = self] status in
+                    Task { @MainActor in if model?.downloadID == id { model?.downloadStatus = status } }
+                }
+            } catch { if !(error is CancellationError) { notice = error.localizedDescription } }
+            guard downloadID == id else { return }
+            refreshModels(); downloadingModel = nil; downloadStatus = ""; downloadTask = nil
+        }
+    }
+    func cancelDownload() {
+        downloadStatus = "Cancelling…"; downloadTask?.cancel()
+    }
+    func selectModel(_ engine: SpeechEngine) {
+        guard !dictation.isActive, engine == .apple || installedModels.contains(engine) else { return }
+        Task { await dictation.unloadModel(); preferences.engine = engine }
+    }
+    func deleteModel(_ engine: SpeechEngine) {
+        guard !dictation.isActive, downloadingModel == nil else { return }
+        Task {
+            if preferences.engine == engine { await dictation.unloadModel(); preferences.engine = .apple }
+            do { try LocalModelStore.delete(engine); refreshModels() }
+            catch { notice = error.localizedDescription }
+        }
+    }
+    func installAppleAssets() {
+        guard !installingApple else { return }
+        installingApple = true; notice = nil
+        Task {
+            do { try await AppleSpeechBackend.installAssets(locale: preferences.locale) }
+            catch { notice = error.localizedDescription }
+            installingApple = false
+        }
+    }
+    func assignShortcut(_ action: ShortcutAction, binding: ShortcutBinding) {
+        var bindings = preferences.shortcuts; bindings[action] = binding
+        do {
+            try ShortcutValidation.validate(bindings)
+            try rebindShortcuts?(bindings)
+            preferences.shortcuts = bindings; recordingShortcut = nil; shortcutError = nil
+        } catch { shortcutError = error.localizedDescription }
+    }
+    func resetShortcuts() {
+        recordingShortcut = nil
+        do { try rebindShortcuts?(ShortcutBinding.defaults); preferences.shortcuts = ShortcutBinding.defaults; shortcutError = nil }
+        catch { shortcutError = error.localizedDescription }
+    }
+    func interrupt(_ message: String) {
+        let active = dictation.isActive || monitoring || preparing
+        stopMonitor()
+        if dictation.isActive { dictation.interrupt(message) }
+        if active { notice = message }
+    }
 
     func startMonitor() {
         guard !preparing, !monitoring else { return }
+        cancelDictation()
         notice = nil
         preparing = true
         manuallyOpened = true
@@ -63,6 +160,8 @@ final class AppModel {
     }
     func showBar() { manuallyOpened = true; onOverlayChange?() }
     func closeBar() {
+        cancelDictation()
+        dictation.dismiss()
         stopMonitor()
         manuallyOpened = false
         preferences.keepBarVisible = false

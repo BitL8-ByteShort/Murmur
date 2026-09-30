@@ -5,7 +5,15 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var model: AppModel?
     var overlay: OverlayController?
-    func applicationWillTerminate(_ notification: Notification) { model?.stopMonitor() }
+    var hotkeys: HotkeyManager?
+    private var sleepObserver: NSObjectProtocol?
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification,
+            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.model?.interrupt("Your Mac went to sleep. Dictation stopped; your text is retained.") }
+        }
+    }
+    func applicationWillTerminate(_ notification: Notification) { model?.stopMonitor(); model?.cancelDictation() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
 
@@ -20,6 +28,7 @@ struct MurmurApp: App {
                 .onAppear {
                     delegate.model = model
                     if delegate.overlay == nil { delegate.overlay = OverlayController(model: model) }
+                    if delegate.hotkeys == nil { delegate.hotkeys = HotkeyManager(model: model) }
                 }
         }
         .defaultSize(width: 980, height: 710)
@@ -33,12 +42,15 @@ struct MurmurApp: App {
             Button("Show voice bar") { model.showBar() }
             Button("Close voice bar") { model.closeBar() }
             Divider()
+            Button("Quick Talk") { model.toggleDictation(.quickTalk) }
+            Button("Keep Talking") { model.toggleDictation(.keepTalking) }
+            Button("Cancel dictation") { model.cancelDictation() }
+            Divider()
             Button(model.monitoring || model.preparing ? "Stop microphone preview" : "Start microphone preview") {
                 if model.monitoring || model.preparing { model.stopMonitor() } else { model.startMonitor() }
             }
-            Text("Dictation is planned")
             Divider()
-            Button("Quit Murmur") { model.stopMonitor(); NSApplication.shared.terminate(nil) }
+            Button("Quit Murmur") { model.stopMonitor(); model.cancelDictation(); NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
         }
     }

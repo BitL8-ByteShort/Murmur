@@ -8,6 +8,26 @@ private final class TapBox: @unchecked Sendable {
     init(_ callback: @escaping AVAudioNodeTapBlock) { self.callback = callback }
 }
 
+@Test func dictationTapConvertsAndQueuesOnAudioWorker() async throws {
+    let source = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
+    let output = AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1)!
+    let inbox = AudioInbox(), session = UUID()
+    let (_, wake) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+    let bridge = try CaptureBridge(from: source, to: output, sessionID: session, inbox: inbox, wake: wake,
+                                  meter: { _ in }, failure: { Issue.record("\($0)") })
+    let callback = TapBox(CaptureService.tap(for: bridge))
+    await Task.detached {
+        let buffer = AVAudioPCMBuffer(pcmFormat: source, frameCapacity: 1536)!
+        buffer.frameLength = 1536
+        buffer.floatChannelData![0].initialize(repeating: 0.1, count: 1536)
+        callback.callback(buffer, AVAudioTime(sampleTime: 0, atRate: 48_000))
+    }.value
+    let packet = inbox.dequeue()
+    #expect(packet?.sessionID == session)
+    #expect(packet?.sampleRate == 16_000)
+    #expect(packet?.samples.isEmpty == false)
+}
+
 @Test @MainActor func microphoneTapCanBeInvokedOnAudioWorker() async {
     let monitor = MicrophoneMonitor()
     var published: MeterFrame?

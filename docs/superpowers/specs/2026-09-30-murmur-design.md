@@ -84,7 +84,9 @@ Transparent outer areas pass clicks through; only visible controls accept clicks
 All forms use bounded microphone energy data. Waveform uses time-domain amplitude
 bins; ring motion may use smoothed energy and frequency bands when available.
 Do not fabricate motion in a live session. Design preview uses a labeled static
-sample. Smooth attack/release, cap visual updates at 30 Hz, honor Reduce Motion and
+sample. Chris requested sharper Aura edges and faster response after trying the
+scaffold. Use a 512-frame tap, up to 60 Hz publication, 25 ms visual interpolation,
+and 3 pt aura blur instead of the original 16 pt. Honor Reduce Motion and
 Reduce Transparency, and add a still visualizer option. Color alone must not convey
 listening, preparing, paused, insertion failure, or permission denial.
 

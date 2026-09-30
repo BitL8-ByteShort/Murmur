@@ -29,7 +29,7 @@ final class MicrophoneMonitor {
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else { throw MonitorError.noInput }
-        input.installTap(onBus: 0, bufferSize: 2048, format: format, block: makeTap(sessionToken: token))
+        input.installTap(onBus: 0, bufferSize: 512, format: format, block: makeTap(sessionToken: token))
         tapInstalled = true
         engine.prepare()
         do { try engine.start() }
@@ -48,7 +48,7 @@ final class MicrophoneMonitor {
             Task { @MainActor [weak self] in
                 guard let self, self.generation == token else { return }
                 let now = ProcessInfo.processInfo.systemUptime
-                guard now - self.lastPublication >= 1.0 / 30 else { return }
+                guard now - self.lastPublication >= 1.0 / 60 else { return }
                 self.lastPublication = now
                 self.onFrame?(frame)
             }

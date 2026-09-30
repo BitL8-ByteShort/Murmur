@@ -5,11 +5,12 @@
     <key>CFBundleName</key><string>Murmur</string>
     <key>CFBundleDisplayName</key><string>Murmur</string>
     <key>CFBundleExecutable</key><string>Murmur</string>
+    <key>CFBundleIconFile</key><string>Murmur</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.1.0</string>
-    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>0.2.0</string>
+    <key>CFBundleVersion</key><string>2</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
-    <key>NSMicrophoneUsageDescription</key><string>Murmur uses your microphone only when you start a live voice visualizer preview. Preview audio stays on this Mac and isn't saved.</string>
+    <key>NSMicrophoneUsageDescription</key><string>Murmur uses your microphone when you start dictation or a live visualizer preview. Speech stays on this Mac; audio isn't saved.</string>
 </dict></plist>

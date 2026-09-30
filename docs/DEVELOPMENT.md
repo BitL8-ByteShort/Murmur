@@ -1,37 +1,57 @@
 # Development
 
-Start with README.md, STATUS.md, then the design and implementation plan.
+Read README.md and STATUS.md before the design and implementation plan.
 
-## Local build
+## Build and install
 
-Run `./script/build_and_run.sh` (also wired to Codex's Run action). The app is built under `build/Murmur.app`.
-The build script uses an ad-hoc development signature and a development bundle ID,
-`com.saltypanda.murmur.dev`. Rebuilding while the app is open doesn't update the
-running process. The run script quits only this project's app bundle before rebuilding.
-For build-only checks, use `./scripts/build-app.sh`.
+Run `./script/build_and_run.sh --verify` (the Codex Run action uses the same script)
+to build and open `build/Murmur.app`. It quits this project's previous app instance.
+Run `./scripts/install-local.sh` to update `/Applications/Murmur.app` with Chris's
+existing Apple Development certificate. The installer quits both exact Murmur
+bundle paths before updating. Microphone capture starts off after relaunch.
 
-Run `swift test` for the core checks. Keep speech integration tests separate from
-pure core tests so they don't silently download assets or request permissions.
+Development bundle ID: `com.saltypanda.murmur.dev`. Build-only defaults to an
+ad-hoc signature; set `MURMUR_SIGN_IDENTITY` for stable certificate signing.
+The installed development app isn't Developer ID signed or notarized.
 
-## Preview checklist
+The pinned packages are FluidAudio 0.17.4, Moonshine 0.1.5 and Argmax 1.1.0.
+The app build copies SwiftPM resource bundles and bundled license documents.
+Model weights stay outside Git under Application Support/Murmur/Models.
 
-1. Launch: settings opens, microphone is off, no permission prompt.
-2. Appearance: switch Waveform, Aura, Aura Ring. Check the ring has an empty center.
-3. Show voice bar: idle capsule appears above the Dock without changing the front app.
-4. Try live microphone: macOS asks once; the selected appearance reacts to actual input.
-5. Stop: input ends and the bar contracts. Close: input ends and the bar disappears.
-6. Pin: leave the idle bar open; relaunch and confirm the microphone stays off.
-7. Deny permission: see a useful message and keep the design preview usable.
-8. Disconnect microphone while monitoring: stop with a clear interruption message.
-9. Menu bar: reopen settings, show/close bar, stop monitoring, quit.
+## Checks
 
-Use a real microphone only after choosing the live preview. Don't accept a static
-design sample or a fixture as evidence of live capture. Keep permission decisions
-with the person using the Mac.
+`swift test` runs pure core tests and worker-callback checks. It doesn't ask for
+permissions, open a microphone or download models. Optional checks are explicit:
 
-## Work sequence
+```sh
+say -o build/dictation-fixture.wav --data-format=LEF32@16000 \
+  'Hello Chris. This is a local dictation test. The quick brown fox jumps over the lazy dog.'
+MURMUR_FIXTURE_PATH="$PWD/build/dictation-fixture.wav" swift test
+MURMUR_FIXTURE_PATH="$PWD/build/dictation-fixture.wav" MURMUR_MODEL_ENGINE=parakeet \
+  swift test --filter downloadedBackendSupportsTwoContinuousUtterancesAndWarmRestart
+```
 
-Implement the plan one milestone at a time. First establish speech and insertion
-with Apple; next add model downloads. Leave public release work until the full
-acceptance matrix passes. Keep docs/STATUS.md honest about what was checked in a
-real app and what was only checked with a test double.
+`MURMUR_MODEL_ENGINE` also accepts `moonshine` or `whisper`. Models must already be
+installed. These checks feed real PCM through the actual engine, finalize two
+utterances, and prepare a fresh warm session. Generated speech proves the backend
+path, not recognition of a human through the physical microphone.
+
+## Hands-on qualification
+
+1. Fresh launch: microphone off, with pin independent of capture.
+2. Appearance: compare all three styles with live input and response strength.
+3. Install Apple language assets or select an explicitly downloaded local model.
+4. Quick Talk: speak, pause, verify finalized words and automatic hide.
+5. Keep Talking: several thoughts, no duplicates or missing speech, finish manually.
+6. Enable Accessibility yourself. Focus a text field in another app, use the
+   shortcut, verify focus and insertion at the caret. No Enter/send action.
+7. Check TextEdit, browser, editor and chat drafts. Check rich clipboard restoration,
+   a new user copy during paste, secure-field refusal, target changes, and terminal
+   multiline refusal. Text remains recoverable when insertion stops.
+8. Record a conflicting shortcut: retain the previous working binding. Escape cancels.
+9. Input removal/change and sleep stop capture with retained text; reconnect requires a new start.
+10. Pin/show/close, multiple displays, full-screen Spaces, long sessions and model
+    download cancellation/delete/re-download remain real environment checks.
+
+Use the status document as the evidence authority. Do not count a static visual
+sample, fixture, pure test or local signature as proof of a public release.
