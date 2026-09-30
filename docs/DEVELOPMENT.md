@@ -5,7 +5,8 @@ Read README.md and STATUS.md before the design and implementation plan.
 ## Build and install
 
 Run `./script/build_and_run.sh --verify` (the Codex Run action uses the same script)
-to build and open `build/Murmur.app`. It quits this project's previous app instance.
+to build and open `build/Murmur.app`. Both launch paths quit the previous app at
+either known bundle path and verify a single instance across those paths.
 Run `./scripts/install-local.sh` to update `/Applications/Murmur.app` with Chris's
 existing Apple Development certificate. The installer quits both exact Murmur
 bundle paths before updating. Microphone capture starts off after relaunch.
@@ -39,7 +40,7 @@ path, not recognition of a human through the physical microphone.
 ## Hands-on qualification
 
 1. Fresh launch: microphone off, with pin independent of capture.
-2. Appearance: compare all three styles with live input and response strength.
+2. Appearance: compare all four styles with live input and response strength.
 3. Install Apple language assets or select an explicitly downloaded local model.
 4. Quick Talk: speak, pause, verify finalized words and automatic hide.
 5. Keep Talking: several thoughts, no duplicates or missing speech, finish manually.

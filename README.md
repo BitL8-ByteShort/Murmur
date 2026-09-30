@@ -51,8 +51,9 @@ Requires Xcode with Swift 6. Dependencies are pinned in `Package.resolved`.
 swift test
 ```
 
-The Codex Run action builds and opens `build/Murmur.app`. Local installation uses
-Chris's existing Apple Development certificate for a stable identity across updates.
+The Codex Run action builds and opens `build/Murmur.app`. Run and local installation
+stop the previous copy at either known path and use Chris's existing Apple
+Development certificate for a stable identity across updates.
 This is development signing, without Developer ID notarization or a public installer.
 Override `MURMUR_SIGN_IDENTITY` to use a different local certificate.
 

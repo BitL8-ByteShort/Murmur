@@ -25,7 +25,9 @@ release qualification remains separate from this working local app.
 
 ## Accepted evidence
 
-- Build and launch scripts succeed; exact installed app bundle has one running instance.
+- Build and launch scripts succeed. Switching from the installed app to Codex Run,
+  then back to installation, leaves exactly one instance across both known bundles.
+  Both paths use the same stable development signing identity.
 - `/Applications/Murmur.app` passes `codesign --verify --deep --strict`.
 - 23 core tests and 3 app checks pass in the ordinary suite. The previously accepted
   Apple fixture and three optional engine checks remain valid; those engines were unchanged.
