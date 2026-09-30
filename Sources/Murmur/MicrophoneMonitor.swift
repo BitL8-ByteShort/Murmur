@@ -5,7 +5,7 @@ import MurmurCore
 final class MicrophoneMonitor {
     private let engine = AVAudioEngine()
     private var tapInstalled = false
-    private var generation = UUID()
+    private(set) var generation = UUID()
     private var lastPublication = 0.0
     var onFrame: ((MeterFrame) -> Void)?
     var onInterrupted: (() -> Void)?
@@ -29,7 +29,18 @@ final class MicrophoneMonitor {
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else { throw MonitorError.noInput }
-        input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
+        input.installTap(onBus: 0, bufferSize: 2048, format: format, block: makeTap(sessionToken: token))
+        tapInstalled = true
+        engine.prepare()
+        do { try engine.start() }
+        catch { stop(); throw error }
+        return true
+    }
+
+    // Construct the callback outside actor isolation: AVAudioEngine invokes it on
+    // RealtimeMessenger, not MainActor. Only publishing the immutable frame hops back.
+    nonisolated func makeTap(sessionToken token: UUID) -> AVAudioNodeTapBlock {
+        { [weak self] buffer, _ in
             guard let channel = buffer.floatChannelData?[0] else { return }
             // Work here is bounded to one tap buffer. No audio is retained or written.
             let samples = Array(UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength)))
@@ -42,11 +53,6 @@ final class MicrophoneMonitor {
                 self.onFrame?(frame)
             }
         }
-        tapInstalled = true
-        engine.prepare()
-        do { try engine.start() }
-        catch { stop(); throw error }
-        return true
     }
 
     func stop() {

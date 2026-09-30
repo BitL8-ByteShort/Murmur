@@ -11,6 +11,7 @@ let package = Package(
     targets: [
         .target(name: "MurmurCore"),
         .executableTarget(name: "Murmur", dependencies: ["MurmurCore"]),
-        .testTarget(name: "MurmurCoreTests", dependencies: ["MurmurCore"])
+        .testTarget(name: "MurmurCoreTests", dependencies: ["MurmurCore"]),
+        .testTarget(name: "MurmurAppTests", dependencies: ["Murmur", "MurmurCore"])
     ]
 )
