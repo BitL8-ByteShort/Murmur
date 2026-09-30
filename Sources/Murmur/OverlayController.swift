@@ -45,15 +45,7 @@ final class OverlayController {
         }
         guard let screen else { return }
         let expanded = model.isExpanded
-        let size: CGSize
-        if expanded {
-            size = switch model.preferences.style {
-            case .waveform: CGSize(width: 360, height: 80)
-            case .aura: CGSize(width: 320, height: 168)
-            case .auraRing: CGSize(width: 228, height: 244)
-            case .particleWave: CGSize(width: 480, height: 180)
-            }
-        } else { size = CGSize(width: 112, height: 32) }
+        let size = expanded ? CGSize(width: 200, height: 56) : CGSize(width: 100, height: 28)
         let visible = screen.visibleFrame
         let width = min(size.width, visible.width - 24)
         let height = min(size.height, visible.height - 24)
@@ -70,44 +62,43 @@ struct OverlayView: View {
     var body: some View {
         Group {
             if model.isExpanded {
-                VStack(spacing: 8) {
+                HStack(spacing: 8) {
                     VoiceVisualizer(style: model.preferences.style, frame: model.visualizerFrame,
                                     reduceMotion: model.preferences.reduceMotion || systemReduceMotion,
                                     intensity: model.preferences.visualizerIntensity, still: model.preferences.stillVisualizer)
-                        .frame(height: model.preferences.style == .waveform ? 24 : model.preferences.style == .auraRing ? 172 : 108)
-                        .padding(.horizontal, 18)
-                    HStack(spacing: 10) {
-                        Circle().fill(MurmurTheme.mint).frame(width: 5, height: 5)
-                        Text(model.status).font(.system(size: 10, weight: .medium)).lineLimit(1)
-                        Spacer(minLength: 0)
+                        .frame(width: model.preferences.style == .auraRing ? 40 : 116,
+                               height: model.preferences.style == .waveform ? 24 : 40)
+                        .frame(width: 116, height: 40)
+                        .help(model.status)
+                    HStack(spacing: 4) {
                         Button {
                             if model.dictation.phase == .preparing { model.cancelDictation() }
                             else if model.dictation.isActive { Task { await model.dictation.finish() } }
                             else { model.stopMonitor() }
-                        } label: { Image(systemName: "stop.fill") }
+                        } label: { Image(systemName: "stop.fill").frame(width: 20, height: 20) }
                             .help("Finish dictation or stop preview")
-                        Button { model.closeBar() } label: { Image(systemName: "xmark") }
+                        Button { model.closeBar() } label: { Image(systemName: "xmark").frame(width: 20, height: 20) }
                             .help("Close bar and stop microphone")
                     }
-                    .font(.system(size: 11)).padding(.horizontal, 16)
+                    .font(.system(size: 11))
                 }
-                .padding(.vertical, 11)
+                .padding(.horizontal, 12)
             } else {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Button { model.toggleDictation(.quickTalk) } label: {
                         Image(systemName: "waveform").foregroundStyle(MurmurTheme.mint)
                     }.help("Start Quick Talk")
-                    Text("Murmur").font(.system(size: 11, weight: .semibold))
+                    Text("Murmur").font(.system(size: 10, weight: .semibold))
                     Button { model.closeBar() } label: { Image(systemName: "xmark").font(.system(size: 8)) }
                         .help("Close voice bar")
-                }.padding(.horizontal, 12).frame(height: 32)
+                }.padding(.horizontal, 10).frame(height: 28)
             }
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(MurmurTheme.surface.opacity(0.97), in: RoundedRectangle(cornerRadius: 24))
-        .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.12), lineWidth: 1))
+        .background(MurmurTheme.surface.opacity(0.97), in: RoundedRectangle(cornerRadius: model.isExpanded ? 22 : 14))
+        .overlay(RoundedRectangle(cornerRadius: model.isExpanded ? 22 : 14).stroke(.white.opacity(0.12), lineWidth: 1))
         .preferredColorScheme(.dark)
     }
 }

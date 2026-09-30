@@ -203,8 +203,9 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 14) {
-                Toggle("Keep the small bar visible", isOn: $model.preferences.keepBarVisible)
-                Text("The bar can stay open with the microphone off.").font(.system(size: 11)).foregroundStyle(.secondary)
+                Toggle("Always on", isOn: $model.preferences.keepBarVisible)
+                Text("Keep a tiny bar visible after dictation. The microphone stays off until you start.")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
                 Divider().overlay(.white.opacity(0.05))
                 Toggle("Reduce visualizer motion", isOn: $model.preferences.reduceMotion)
                 Toggle("Still visualizer", isOn: $model.preferences.stillVisualizer)

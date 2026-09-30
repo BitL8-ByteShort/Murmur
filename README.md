@@ -14,7 +14,8 @@ hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public
 - **Quick Talk:** say something, pause, and finish. Default shortcut: Control–Option–Space.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
 - **Show or close the bar:** Control–Option–B. Pin it without keeping the mic on.
-- **Four looks:** Waveform, Aura, Aura Ring and a teal Particle Wave.
+- **Four looks:** Waveform, Aura, Aura Ring and a teal Particle Wave, all in a compact 200 × 56-point bar.
+- **Always on:** keep a tiny 100 × 28-point idle pill visible with the microphone off. Otherwise, the bar hides when dictation finishes or stops.
 - **Adjustable visuals:** response strength, reduced motion, still mode, display and bottom spacing.
 - **Local speech:** explicit language/model downloads. Downloading never selects a model or opens the microphone.
 - **Editable shortcuts:** click a binding in Shortcuts to record it. Escape cancels recording or active dictation.

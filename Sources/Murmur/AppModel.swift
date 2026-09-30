@@ -56,8 +56,11 @@ final class AppModel {
         refreshModels()
         Task { locales = await AppleSpeechBackend.supportedLocales() }
     }
-    var barVisible: Bool { preferences.keepBarVisible || manuallyOpened || monitoring || preparing || dictation.phase != .idle }
-    var isExpanded: Bool { monitoring || preparing || dictation.phase != .idle }
+    var barVisible: Bool {
+        OverlayPolicy.isVisible(pinned: preferences.keepBarVisible, manuallyOpened: manuallyOpened,
+                                phase: dictation.phase) || monitoring || preparing
+    }
+    var isExpanded: Bool { monitoring || preparing || dictation.isActive }
     var visualizerFrame: MeterFrame { dictation.isActive ? dictation.meter : meter }
     var status: String { preparing ? "Preparing microphone…" : monitoring ? "Live microphone preview" : dictation.status }
 
@@ -138,7 +141,6 @@ final class AppModel {
         cancelDictation()
         notice = nil
         preparing = true
-        manuallyOpened = true
         let token = UUID(); requestID = token
         onOverlayChange?()
         Task {

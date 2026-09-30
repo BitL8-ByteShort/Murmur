@@ -47,7 +47,19 @@ import Foundation
     #expect(!session.phase.isActive)
     #expect(!OverlayPolicy.isVisible(pinned: false, manuallyOpened: false, phase: .idle))
     #expect(OverlayPolicy.isVisible(pinned: false, manuallyOpened: true, phase: .idle))
-    #expect(OverlayPolicy.isVisible(pinned: false, manuallyOpened: false, phase: .failed))
+    #expect(!OverlayPolicy.isVisible(pinned: false, manuallyOpened: false, phase: .failed))
+}
+
+@Test func completedOrFailedDictationHidesTheBarUnlessPinnedOrManuallyOpened() {
+    for phase in [SessionPhase.idle, .success, .failed] {
+        #expect(!OverlayPolicy.isVisible(pinned: false, manuallyOpened: false, phase: phase))
+        #expect(OverlayPolicy.isVisible(pinned: true, manuallyOpened: false, phase: phase))
+        #expect(OverlayPolicy.isVisible(pinned: false, manuallyOpened: true, phase: phase))
+        #expect(!phase.isActive)
+    }
+    for phase in [SessionPhase.preparing, .listening, .finalizing, .inserting] {
+        #expect(OverlayPolicy.isVisible(pinned: false, manuallyOpened: false, phase: phase))
+    }
 }
 
 @Test func malformedAudioCannotBreakVisualizerBounds() {

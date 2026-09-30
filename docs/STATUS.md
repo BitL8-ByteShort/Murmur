@@ -11,15 +11,15 @@ release qualification remains separate from this working local app.
 | --- | --- |
 | Repository | BitL8-ByteShort/Murmur, verified PRIVATE; development branch jorvek/murmur-app |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
-| Visuals | Four styles: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; input requests 512-frame tap, meter capped at 60 Hz, 16 ms interpolation |
-| Appearance | Response strength, still/reduced motion, display selection, bottom offset, independent pin/show/close |
+| Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; input requests 512-frame tap, meter capped at 60 Hz, 16 ms interpolation |
+| Appearance | Automatic hiding after completion/failure; Always on or manual show retains a 100 × 28-point idle pill with the mic off; response strength, still/reduced motion, display selection, bottom offset |
 | Crash repair | Original microphone callback moved outside MainActor; preview and dictation callback worker regressions pass |
 | Capture | Packaged app recognizes generated speech played through the physical speakers into the built-in microphone; Quick Talk returns to Mic off without a crash |
 | Recognition | Apple Speech, Parakeet, Moonshine and Whisper Turbo integrated; local fixture checks described below |
 | Pauses | Recognizer-confirmed speech plus input energy; Quick Talk pause and Keep Talking utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
-| Insertion | Earlier native TextEdit insertion established; web editors now receive ordinary keyboard paste, output requires text readback for an Inserted status; updated Codex composer confirmation pending |
+| Insertion | Native TextEdit insertion established; Chris confirms updated paste reaches the Codex composer, although Murmur's exact readback did not confirm it and retained the words for recovery |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
@@ -34,7 +34,7 @@ release qualification remains separate from this working local app.
   matches the current app after rebuilding. An older microphone permission also
   failed its code requirement; it was reset and the current app's consent completed.
   First-use microphone handling brings the app forward and labels the permission wait.
-- 26 core tests and 11 app checks pass, plus the previously accepted Apple single-phrase and continuous
+- 27 core tests and 11 app checks pass, plus the previously accepted Apple single-phrase and continuous
   integration checks. The previously accepted three optional engine checks remain valid;
   those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -45,6 +45,12 @@ release qualification remains separate from this working local app.
 - Native appearance picker shows all four choices; Particle Wave selected and
   visually compared with Chris's reference. It uses a deterministic teal particle
   field driven by input, with no timer running for idle redraw.
+- All four compact floating styles were inspected in the installed app with live
+  microphone input. Waveform spacing and ring motion scale to the smaller bounds.
+  Stopping an unpinned preview hides it; Always on collapses it to the idle pill.
+  Manual show/close also works with the microphone off. Particle Wave and Always on
+  disabled were restored afterward. The terminal-state visibility regression fails
+  for success/failure before the policy fix and passes afterward.
 - Both real audio callback factories are invoked on a worker with synthetic PCM buffers.
   The dictation tap converts 48 kHz audio into queued 16 kHz packets off the UI actor.
 - Apple recognizes the generated sentence containing “local dictation” and
@@ -82,6 +88,11 @@ release qualification remains separate from this working local app.
   double paste, web-editor selection with Unicode, no-op paste, unexpected edits,
   focus changes, unreadable fields and recognition without any delivery. No microphone
   or external app is used by these regression checks.
+- Chris's next human dictation reached the Codex composer. Murmur still could not
+  confirm the exact resulting text and reported Dictation stopped. That terminal
+  state had incorrectly kept the overlay expanded; it now hides automatically,
+  or collapses to the idle pill when Always on is enabled. Readback compatibility
+  with this composer remains a separate limitation.
 - Selecting the built-in microphone no longer resets an already-default audio graph.
   The original System default microphone preference was restored after validation.
 - Parakeet's actual Download button completed in the packaged app. It became
@@ -97,16 +108,18 @@ release qualification remains separate from this working local app.
 - GitHub API confirms `isPrivate: true`, `visibility: PRIVATE`.
 
 The fixture and live speaker test use generated speech, not human dictation.
-TextEdit insertion is established; browser, editor, terminal and chat-app insertion
-still need native checks. Apple's optional VAD gate can discard audio and its result
+TextEdit insertion is established and Chris confirms typing into the Codex composer;
+other browser, editor, terminal and chat-app insertion still needs native checks.
+Apple's optional VAD gate can discard audio and its result
 stream currently supports error handling only. Murmur uses the transcriber without
 that gate. See [Apple's module documentation](https://developer.apple.com/documentation/speech/speechdetector).
 
 ## Remaining qualification
 
-- Confirm the updated paste path in the Codex composer. The computer-use tool
+- Improve exact insertion readback compatibility with the Codex composer. Chris
+  confirms that the updated paste reaches the field. The computer-use tool
   explicitly refuses the Codex app for safety reasons; this field cannot be
-  directly exercised by the agent. No successful post-fix Codex insertion is claimed.
+  directly exercised by the agent.
 - Verify physical global shortcut presses and clipboard-paste fallback in other
   destination apps. The automation's per-app key delivery doesn't establish global
   Carbon dispatch. Registration, recorder, conflict and rollback checks are established.

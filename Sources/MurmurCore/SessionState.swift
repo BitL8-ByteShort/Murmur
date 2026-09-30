@@ -44,6 +44,6 @@ public struct SessionState: Sendable {
 
 public enum OverlayPolicy {
     public static func isVisible(pinned: Bool, manuallyOpened: Bool, phase: SessionPhase) -> Bool {
-        pinned || manuallyOpened || phase != .idle
+        pinned || manuallyOpened || phase.isActive
     }
 }
