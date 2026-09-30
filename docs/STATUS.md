@@ -11,7 +11,7 @@ release qualification remains separate from this working local app.
 | --- | --- |
 | Repository | BitL8-ByteShort/Murmur, verified PRIVATE; development branch jorvek/murmur-app |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
-| Visuals | Aura with no blur, faster Waveform/Aura/Ring; input requests 512-frame tap, meter capped at 60 Hz, 16 ms interpolation |
+| Visuals | Four styles: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; input requests 512-frame tap, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Response strength, still/reduced motion, display selection, bottom offset, independent pin/show/close |
 | Crash repair | Original microphone callback moved outside MainActor; preview and dictation callback worker regressions pass |
 | Capture | Real microphone start verified in packaged app; silence timeout returned it to Mic off without a crash |
@@ -20,17 +20,23 @@ release qualification remains separate from this working local app.
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
 | Insertion | Pinned target app/field, secure-field refusal, AX insertion or clipboard-preserving paste, no Enter; live app checks pending Accessibility permission |
-| Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; latest transcript in memory |
+| Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
 ## Accepted evidence
 
 - Build and launch scripts succeed; exact installed app bundle has one running instance.
 - `/Applications/Murmur.app` passes `codesign --verify --deep --strict`.
-- 21 core tests and 3 app checks pass with the explicitly enabled Apple fixture.
+- 23 core tests and 3 app checks pass in the ordinary suite. The previously accepted
+  Apple fixture and three optional engine checks remain valid; those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
-  endpoints, shortcut conflicts/repeat/rollback, clipboard ownership, safe destination
+  endpoints, particle bounds/response/reduced motion, recovery across attempts,
+  cancellation while previous preparation cleans up, shortcut conflicts/repeat/rollback,
+  clipboard ownership, safe destination
   rules, insertion spacing, rolling audio windows, preferences and meter response.
+- Native appearance picker shows all four choices; Particle Wave selected and
+  visually compared with Chris's reference. It uses a deterministic teal particle
+  field driven by input, with no timer running for idle redraw.
 - Both real audio callback factories are invoked on a worker with synthetic PCM buffers.
   The dictation tap converts 48 kHz audio into queued 16 kHz packets off the UI actor.
 - Apple recognizes the generated sentence containing “local dictation” and

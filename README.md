@@ -14,7 +14,7 @@ are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
 - **Quick Talk:** say something, pause, and finish. Default shortcut: Control–Option–Space.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
 - **Show or close the bar:** Control–Option–B. Pin it without keeping the mic on.
-- **Three looks:** a waveform, a crisp aura, or colorful responding rings.
+- **Four looks:** Waveform, Aura, Aura Ring and a teal Particle Wave.
 - **Adjustable visuals:** response strength, reduced motion, still mode, display and bottom spacing.
 - **Local speech:** explicit language/model downloads. Downloading never selects a model or opens the microphone.
 - **Editable shortcuts:** click a binding in Shortcuts to record it. Escape cancels recording or active dictation.
@@ -38,7 +38,8 @@ Without this permission, or with **Copy only** enabled, use the transcript's Cop
 **Appearance → Try live microphone** tests the visuals without transcribing.
 Stop, Close, Cancel or Quit ends capture. The appearance sample with the mic off
 is static and labeled. Raw audio isn't saved, and no transcript history is written
-to disk. The latest session remains in memory until cleared or the app quits.
+to disk. Recognized words remain in memory until cleared or the app quits. Starting again
+archives the previous transcript for recovery; closing the bar keeps the words.
 
 ## Build, run and install
 

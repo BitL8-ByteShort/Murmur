@@ -128,6 +128,24 @@ struct SettingsView: View {
                     Text(notice).font(.system(size: 12)).foregroundStyle(MurmurTheme.peach)
                 }
             }.padding(20).frame(minHeight: 160, alignment: .top).card()
+            if !model.dictation.recovery.entries.isEmpty {
+                DisclosureGroup("Previous transcripts · in memory") {
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(model.dictation.recovery.entries.reversed()) { entry in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(entry.createdAt, format: .dateTime.hour().minute()).foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("Copy") { model.dictation.copyRecovery(entry) }
+                                }
+                                Text(entry.text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                            }.padding(12).card()
+                        }
+                        Button("Clear previous transcripts") { model.dictation.clearPreviousTranscripts() }
+                        Text("Kept only until you clear them or quit Murmur. Nothing is written to disk.").foregroundStyle(.secondary)
+                    }.font(.system(size: 12)).padding(.top, 12)
+                }.padding(18).card()
+            }
             Text("Speech stays on this Mac. Murmur types finalized words and never presses Enter or sends a message.")
                 .font(.system(size: 11)).foregroundStyle(.secondary)
         }
@@ -145,8 +163,8 @@ struct SettingsView: View {
                                     frame: model.monitoring || model.dictation.isActive ? model.visualizerFrame : .preview,
                                     reduceMotion: model.preferences.reduceMotion || systemReduceMotion,
                                     intensity: model.preferences.visualizerIntensity, still: model.preferences.stillVisualizer)
-                        .frame(width: model.preferences.style == .auraRing ? 172 : 270,
-                               height: model.preferences.style == .waveform ? 46 : model.preferences.style == .aura ? 100 : 172)
+                        .frame(width: model.preferences.style == .auraRing ? 172 : model.preferences.style == .particleWave ? 550 : 270,
+                               height: model.preferences.style == .waveform ? 46 : model.preferences.style == .auraRing ? 172 : 140)
                     HStack(spacing: 8) {
                         Circle().fill(MurmurTheme.mint).frame(width: 5, height: 5)
                         Text(model.monitoring || model.dictation.isActive ? "Live microphone" : "Appearance preview")
@@ -160,12 +178,12 @@ struct SettingsView: View {
                 }
             }.frame(height: 252)
 
-            HStack(spacing: 10) {
+            LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 10) {
                 ForEach(VisualizerStyle.allCases) { style in
                     Button { model.preferences.style = style } label: {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
-                                Image(systemName: style == .waveform ? "waveform" : style == .aura ? "sparkles" : "circle.dotted.circle")
+                                Image(systemName: style.icon)
                                     .foregroundStyle(model.preferences.style == style ? MurmurTheme.mint : .secondary)
                                 Spacer()
                                 if model.preferences.style == style {
@@ -173,7 +191,7 @@ struct SettingsView: View {
                                 }
                             }
                             Text(style.title).font(.system(size: 13, weight: .semibold))
-                            Text(style == .waveform ? "Small and focused" : style == .aura ? "Crisp color and movement" : "Layers that respond")
+                            Text(style.detail)
                                 .font(.system(size: 10)).foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading).padding(14)
@@ -303,7 +321,7 @@ struct SettingsView: View {
             ForEach([
                 ("Microphone", "Starts only when you choose dictation or live preview. Finish, Cancel, Close, and Quit end capture."),
                 ("Accessibility", "Optional permission for typing into other apps. Murmur checks the destination and refuses password fields."),
-                ("History", "No transcript history is written to disk. The latest session remains in memory for copying."),
+                ("History", "No transcripts are written to disk. Previous attempts remain in memory for recovery until you clear them or quit."),
                 ("Network", "Only explicit model or language downloads use the network. Recognition is local. No analytics or cloud rewriting.")
             ], id: \.0) { item in
                 VStack(alignment: .leading, spacing: 8) {

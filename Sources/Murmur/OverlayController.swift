@@ -51,6 +51,7 @@ final class OverlayController {
             case .waveform: CGSize(width: 360, height: 80)
             case .aura: CGSize(width: 320, height: 168)
             case .auraRing: CGSize(width: 228, height: 244)
+            case .particleWave: CGSize(width: 480, height: 180)
             }
         } else { size = CGSize(width: 112, height: 32) }
         let visible = screen.visibleFrame
@@ -73,7 +74,7 @@ struct OverlayView: View {
                     VoiceVisualizer(style: model.preferences.style, frame: model.visualizerFrame,
                                     reduceMotion: model.preferences.reduceMotion || systemReduceMotion,
                                     intensity: model.preferences.visualizerIntensity, still: model.preferences.stillVisualizer)
-                        .frame(height: model.preferences.style == .waveform ? 24 : model.preferences.style == .aura ? 108 : 172)
+                        .frame(height: model.preferences.style == .waveform ? 24 : model.preferences.style == .auraRing ? 172 : 108)
                         .padding(.horizontal, 18)
                     HStack(spacing: 10) {
                         Circle().fill(MurmurTheme.mint).frame(width: 5, height: 5)

@@ -161,7 +161,6 @@ final class AppModel {
     func showBar() { manuallyOpened = true; onOverlayChange?() }
     func closeBar() {
         cancelDictation()
-        dictation.dismiss()
         stopMonitor()
         manuallyOpened = false
         preferences.keepBarVisible = false

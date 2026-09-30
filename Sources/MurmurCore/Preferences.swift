@@ -1,10 +1,16 @@
 import Foundation
 
 public enum VisualizerStyle: String, Codable, CaseIterable, Sendable, Identifiable {
-    case waveform, aura, auraRing
+    case waveform, aura, auraRing, particleWave
     public var id: String { rawValue }
     public var title: String {
-        switch self { case .waveform: "Waveform"; case .aura: "Aura"; case .auraRing: "Aura Ring" }
+        switch self { case .waveform: "Waveform"; case .aura: "Aura"; case .auraRing: "Aura Ring"; case .particleWave: "Particle Wave" }
+    }
+    public var icon: String {
+        switch self { case .waveform: "waveform"; case .aura: "sparkles"; case .auraRing: "circle.dotted.circle"; case .particleWave: "aqi.medium" }
+    }
+    public var detail: String {
+        switch self { case .waveform: "Small and focused"; case .aura: "Crisp color and movement"; case .auraRing: "Layers that respond"; case .particleWave: "A flowing field of particles" }
     }
 }
 

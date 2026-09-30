@@ -17,6 +17,7 @@ struct VoiceVisualizer: View {
     let reduceMotion: Bool
     var intensity = 1.0
     var still = false
+    @State private var particlePhase = 0.0
     private var response: MeterFrame {
         if still { return .silence }
         let gain = Float(min(2, max(0.5, intensity)))
@@ -29,11 +30,36 @@ struct VoiceVisualizer: View {
             case .waveform: waveform
             case .aura: aura
             case .auraRing: rings
+            case .particleWave: particles
             }
         }
         .animation(reduceMotion ? nil : .linear(duration: 0.016), value: frame)
         .accessibilityLabel("\(style.title) microphone level")
         .accessibilityValue("\(Int(frame.level * 100)) percent")
+        .onChange(of: frame) { _, next in
+            if style == .particleWave, !still, !reduceMotion, next.level > 0.01 {
+                particlePhase = (particlePhase + 0.04 + Double(next.level) * 0.09).truncatingRemainder(dividingBy: .pi * 20)
+            }
+        }
+    }
+
+    private var particles: some View {
+        let input = response, phase = particlePhase, reduced = reduceMotion
+        return Canvas(rendersAsynchronously: true) { context, size in
+            let points = ParticleField.points(frame: input, phase: phase, reduceMotion: reduced)
+            var paths = Array(repeating: Path(), count: 8)
+            for point in points {
+                let radius = max(0.3, point.radius * size.height)
+                paths[point.shade].addEllipse(in: CGRect(x: point.x * size.width - radius,
+                    y: point.y * size.height - radius, width: radius * 2, height: radius * 2))
+            }
+            for shade in 0..<8 {
+                let brightness = Double(shade) / 7
+                context.fill(paths[shade], with: .color(Color(red: 0.04 + brightness * 0.08,
+                    green: 0.55 + brightness * 0.34, blue: 0.58 + brightness * 0.36)
+                    .opacity(0.12 + brightness * 0.85)))
+            }
+        }
     }
 
     private var waveform: some View {

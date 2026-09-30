@@ -11,6 +11,7 @@ final class DictationCoordinator {
     private(set) var transcript = ""
     private(set) var partial = ""
     private(set) var notice: String?
+    private(set) var recovery = RecoveryBuffer()
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored private let capture = CaptureService()
     @ObservationIgnored private var backend: (any SpeechBackend)?
@@ -31,18 +32,31 @@ final class DictationCoordinator {
     @ObservationIgnored private var insertsIntoApp = false
     @ObservationIgnored private var loadedEngine: SpeechEngine?
     @ObservationIgnored private var lastActivityText = ""
+    @ObservationIgnored private var transcriptID = UUID()
+    @ObservationIgnored private var transcriptDate = Date()
+    @ObservationIgnored private let backendFactory: @MainActor (SpeechEngine) -> any SpeechBackend
 
-    init() {
+    init(backendFactory: @escaping @MainActor (SpeechEngine) -> any SpeechBackend = DictationCoordinator.makeBackend) {
+        self.backendFactory = backendFactory
         capture.onMeter = { [weak self] in self?.meter = $0 }
         capture.onFailure = { [weak self] in self?.fail($0) }
+    }
+    private static func makeBackend(_ engine: SpeechEngine) -> any SpeechBackend {
+        switch engine {
+        case .apple: AppleSpeechBackend()
+        case .parakeet: ParakeetBackend()
+        case .moonshine: MoonshineBackend()
+        case .whisper: WhisperBackend()
+        }
     }
     var isActive: Bool { phase.isActive }
     var recoveryText: String { [transcript, partial].filter { !$0.isEmpty }.joined(separator: " ") }
 
     func start(mode: CaptureMode, preferences: Preferences) async {
         guard !isActive else { return }
-        await cleanup?.value
         let id = UUID(); sessionID = id
+        recovery.save(sessionID: transcriptID, text: recoveryText, createdAt: transcriptDate)
+        transcriptID = id; transcriptDate = Date()
         self.mode = mode; phase = .preparing; status = "Preparing \(preferences.engine.title)…"
         transcript = ""; partial = ""; notice = nil; meter = .silence
         insertsIntoApp = false
@@ -63,14 +77,11 @@ final class DictationCoordinator {
             }
         }
         do {
+            await cleanup?.value
+            try check(id)
             if loadedEngine != preferences.engine {
                 await self.backend?.unload()
-                let base: any SpeechBackend = switch preferences.engine {
-                case .apple: AppleSpeechBackend()
-                case .parakeet: ParakeetBackend()
-                case .moonshine: MoonshineBackend()
-                case .whisper: WhisperBackend()
-                }
+                let base = backendFactory(preferences.engine)
                 self.backend = SerializedSpeechBackend(base)
                 loadedEngine = preferences.engine
             }
@@ -119,7 +130,10 @@ final class DictationCoordinator {
             }
             onChange?()
         } catch {
-            if sessionID == id, !(error is CancellationError) { fail(error.localizedDescription) }
+            if sessionID == id {
+                if error is CancellationError { cancel() }
+                else { fail(error.localizedDescription) }
+            }
         }
     }
 
@@ -183,11 +197,12 @@ final class DictationCoordinator {
         } catch { if sessionID == id, !(error is CancellationError) { fail(error.localizedDescription) } }
     }
     func cancel() {
+        let retained = recoveryText
         sessionID = UUID()
         capture.stop(); timer?.cancel(); worker?.cancel(); events?.cancel()
         wake?.finish(); eventSink?.finish()
         timer = nil; wake = nil; eventSink = nil
-        partial = ""; phase = .idle; status = "Mic off"
+        transcript = retained; partial = ""; phase = .idle; status = "Mic off"
         let backend = backend, previousCleanup = cleanup
         cleanup = Task { await previousCleanup?.value; await backend?.suspend() }
         onChange?()
@@ -211,4 +226,9 @@ final class DictationCoordinator {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(recoveryText, forType: .string)
     }
+    func copyRecovery(_ entry: RecoveryEntry) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(entry.text, forType: .string)
+    }
+    func clearPreviousTranscripts() { recovery.clear() }
 }
