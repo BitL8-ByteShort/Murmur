@@ -17,7 +17,9 @@ import Testing
     let repeated = gate.press(0)
     #expect(first)
     #expect(!repeated)
-    gate.release(0)
+    let released = gate.release(0), duplicateRelease = gate.release(0)
+    #expect(released)
+    #expect(!duplicateRelease)
     let next = gate.press(0)
     #expect(next)
 }

@@ -91,9 +91,11 @@ import MurmurCore
 
 @Test @MainActor func unreadableEditorReportsSentWithoutClaimingVerification() async throws {
     var pasteCount = 0
+    var waits = 0
     let result = try await InsertionDelivery.deliver("Words", prefersPaste: true,
         read: { nil }, validate: {}, direct: { _ in Issue.record("Do not write blindly through AX"); return true },
-        paste: { _ in pasteCount += 1 }, pause: {})
+        paste: { _ in pasteCount += 1 }, pause: { waits += 1 })
     #expect(result == .sent)
     #expect(pasteCount == 1)
+    #expect(waits == 0)
 }

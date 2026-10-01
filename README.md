@@ -11,7 +11,7 @@ Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
 recognition and actual typing into TextEdit have been verified locally. More
 hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
 
-- **Quick Talk:** say something, pause, and finish. Default shortcut: Control–Option–Space.
+- **Quick Talk:** hold Control–Option–Space to talk; release to stop the mic and paste finalized words. There is no silence delay after release. Starting from a button or menu still finishes after the adjustable pause.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
 - **Show or close the bar:** Control–Option–B. Pin it without keeping the mic on.
 - **Four looks:** Waveform, Aura, Aura Ring and a teal Particle Wave, all in a compact 200 × 56-point bar.
@@ -49,6 +49,12 @@ TigerVNC's [Send clipboard setting](https://tigervnc.org/doc/vncviewer.html) mus
 Remote output reports **Paste sent · check app**, because only the viewer window
 can be checked; Murmur cannot inspect remote fields or passwords. It never sends
 Enter, and multiline remote text remains available for copying.
+Murmur briefly activates itself and returns to the same TigerVNC window to trigger
+the Mac viewer's clipboard-change check. It stops if you switch to another app or
+viewer window. Completion follows a clipboard read rather than a fixed delay;
+that read does not prove remote text insertion. If the clipboard is not requested,
+Murmur keeps the words and reports a clipboard-sharing error. No remote helper is
+required. The transcript shows the captured destination and paste shortcut.
 
 **Appearance → Try live microphone** tests the visuals without transcribing.
 Stop, Close, Cancel or Quit ends capture. The appearance sample with the mic off

@@ -42,7 +42,7 @@ path, not recognition of a human through the physical microphone.
 1. Fresh launch: microphone off, with pin independent of capture.
 2. Appearance: compare all four styles with live input and response strength.
 3. Install Apple language assets or select an explicitly downloaded local model.
-4. Quick Talk: speak, pause, verify finalized words and automatic hide.
+4. Quick Talk: hold the shortcut, speak through a pause, release and verify recording stops immediately, all finalized words are inserted once and the bar hides. Separately check button-started pause completion.
 5. Keep Talking: several thoughts, no duplicates or missing speech, finish manually.
 6. Enable Accessibility yourself. Focus a text field in another app, use the
    shortcut, verify focus and insertion at the caret. No Enter/send action.

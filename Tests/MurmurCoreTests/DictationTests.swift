@@ -60,6 +60,17 @@ import Testing
     #expect(continuous.update(speechDetected: false, elapsedSeconds: 325) == .inactivityTimeout)
 }
 
+@Test func heldQuickTalkKeepsListeningThroughPausesUntilRelease() {
+    var held = EndpointPolicy(mode: .quickTalk, silenceSeconds: 0.7, inactivitySeconds: 60, finishQuickTalkOnPause: false)
+    _ = held.update(speechDetected: true, elapsedSeconds: 1)
+    #expect(held.update(speechDetected: false, elapsedSeconds: 2) == .continueListening)
+    #expect(held.update(speechDetected: false, elapsedSeconds: 10) == .continueListening)
+    _ = held.update(speechDetected: true, elapsedSeconds: 11)
+    #expect(held.update(speechDetected: false, elapsedSeconds: 12) == .continueListening)
+    var empty = EndpointPolicy(mode: .quickTalk, silenceSeconds: 0.7, inactivitySeconds: 60, finishQuickTalkOnPause: false)
+    #expect(empty.update(speechDetected: false, elapsedSeconds: 15) == .noSpeechTimeout)
+}
+
 @Test func legacyPreferencesRetainAppearanceAndDefaultToMicOff() throws {
     let data = Data(#"{"version":1,"style":"auraRing","keepBarVisible":true,"reduceMotion":false}"#.utf8)
     let preferences = try JSONDecoder().decode(Preferences.self, from: data)

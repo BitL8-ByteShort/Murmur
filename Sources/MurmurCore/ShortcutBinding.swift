@@ -45,7 +45,7 @@ public struct HotkeyPressGate: Sendable {
     private var held: Set<UInt32> = []
     public init() {}
     public mutating func press(_ id: UInt32) -> Bool { held.insert(id).inserted }
-    public mutating func release(_ id: UInt32) { held.remove(id) }
+    @discardableResult public mutating func release(_ id: UInt32) -> Bool { held.remove(id) != nil }
     public mutating func reset() { held.removeAll() }
 }
 @MainActor public final class ShortcutRegistry {

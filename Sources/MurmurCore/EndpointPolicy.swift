@@ -7,18 +7,21 @@ public struct EndpointPolicy: Sendable {
     private let mode: CaptureMode
     private let silenceSeconds: Double
     private let inactivitySeconds: Double
+    private let finishQuickTalkOnPause: Bool
     private var lastSpeech: Double?
     private var pendingSpeech = false
     private var ended = false
-    public init(mode: CaptureMode, silenceSeconds: Double, inactivitySeconds: Double) {
+    public init(mode: CaptureMode, silenceSeconds: Double, inactivitySeconds: Double, finishQuickTalkOnPause: Bool = true) {
         self.mode = mode
         self.silenceSeconds = min(3, max(0.7, silenceSeconds))
         self.inactivitySeconds = inactivitySeconds
+        self.finishQuickTalkOnPause = finishQuickTalkOnPause
     }
     public mutating func update(speechDetected: Bool, elapsedSeconds: Double) -> EndpointDecision {
         guard !ended else { return .continueListening }
         if speechDetected { lastSpeech = elapsedSeconds; pendingSpeech = true; return .continueListening }
-        if let lastSpeech, pendingSpeech, elapsedSeconds - lastSpeech >= silenceSeconds {
+        if (mode != .quickTalk || finishQuickTalkOnPause),
+           let lastSpeech, pendingSpeech, elapsedSeconds - lastSpeech >= silenceSeconds {
             pendingSpeech = false
             if mode == .quickTalk { ended = true }
             return .finalizeUtterance

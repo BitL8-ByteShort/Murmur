@@ -34,6 +34,7 @@ import MurmurCore
         do { try rebind(model.preferences.shortcuts) } catch { model.shortcutError = error.localizedDescription }
     }
     private func setRecording(_ active: Bool) {
+        if active { model.releaseHeldQuickTalk() }
         gate.reset()
         if active {
             references.forEach { UnregisterEventHotKey($0) }; references.removeAll()
@@ -45,6 +46,7 @@ import MurmurCore
         }
     }
     private func rebind(_ bindings: [ShortcutAction: ShortcutBinding]) throws {
+        model.releaseHeldQuickTalk()
         gate.reset()
         try registry.rebind(bindings, register: { action, binding in
             var reference: EventHotKeyRef?
@@ -67,10 +69,13 @@ import MurmurCore
         }
     }
     private func received(_ id: UInt32, released: Bool) {
-        if released { gate.release(id); return }
+        if released {
+            if gate.release(id), id == 0 { model.releaseHeldQuickTalk() }
+            return
+        }
         guard model.recordingShortcut == nil, gate.press(id) else { return }
         switch id {
-        case 0: model.toggleDictation(.quickTalk)
+        case 0: model.beginHeldQuickTalk()
         case 1: model.toggleDictation(.keepTalking)
         case 2: if model.barVisible { model.closeBar() } else { model.showBar() }
         case 99: model.cancelDictation()

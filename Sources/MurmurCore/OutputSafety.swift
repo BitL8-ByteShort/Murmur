@@ -1,7 +1,7 @@
 import Foundation
 
 public enum OutputSafetyError: Error, LocalizedError, Equatable {
-    case targetChanged, secureField, terminalNewline, permissionRequired, noEditableField, clipboardUnavailable, insertionNotConfirmed
+    case targetChanged, secureField, terminalNewline, permissionRequired, noEditableField, clipboardUnavailable, insertionNotConfirmed, remoteClipboardUnavailable
     public var errorDescription: String? {
         switch self {
         case .targetChanged: "The destination changed. Your words are saved in Murmur for copying."
@@ -11,6 +11,7 @@ public enum OutputSafetyError: Error, LocalizedError, Equatable {
         case .noEditableField: "Choose a text field in another app before starting. Your words are saved for copying."
         case .clipboardUnavailable: "The clipboard couldn't be preserved. Your words are saved for copying."
         case .insertionNotConfirmed: "The app didn't confirm the text was inserted. Your words are saved in Murmur for copying."
+        case .remoteClipboardUnavailable: "TigerVNC didn't read the clipboard. Enable Send clipboard in its options, then try again. Your words are saved in Murmur for copying."
         }
     }
 }

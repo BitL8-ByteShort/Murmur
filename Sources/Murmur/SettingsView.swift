@@ -73,7 +73,7 @@ struct SettingsView: View {
     private var dictation: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Say what's on your mind.").font(.system(size: 29, weight: .semibold))
-            Text("Quick Talk finishes after a pause. Keep Talking stays listening between thoughts.")
+            Text("Hold the Quick Talk shortcut to speak; release to paste. Keep Talking stays listening between thoughts.")
                 .font(.system(size: 13)).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 Button(model.dictation.isActive ? "Finish dictation" : "Quick Talk") { model.toggleDictation(.quickTalk) }
@@ -94,7 +94,7 @@ struct SettingsView: View {
                     }
                 }
                 HStack {
-                    Text("Quick Talk pause").font(.system(size: 12))
+                    Text("Button-started pause").font(.system(size: 12))
                     Slider(value: $model.preferences.silenceSeconds, in: 0.7...3, step: 0.1)
                     Text("\(model.preferences.silenceSeconds, specifier: "%.1f") s").font(.system(size: 11, design: .monospaced)).frame(width: 42)
                 }
@@ -125,6 +125,10 @@ struct SettingsView: View {
                     Spacer()
                     Button("Copy") { model.dictation.copyTranscript() }.disabled(model.dictation.recoveryText.isEmpty)
                     Button("Clear") { model.dictation.dismiss() }.disabled(model.dictation.isActive)
+                }
+                if !model.dictation.destinationDescription.isEmpty {
+                    Text("Destination: " + model.dictation.destinationDescription)
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Text(model.dictation.transcript.isEmpty ? "Your finalized words appear here." : model.dictation.transcript)
                     .font(.system(size: 14)).foregroundStyle(model.dictation.transcript.isEmpty ? .secondary : .primary)

@@ -16,11 +16,11 @@ release qualification remains separate from this working local app.
 | Crash repair | Original microphone callback moved outside MainActor; preview and dictation callback worker regressions pass |
 | Capture | Packaged app recognizes generated speech played through the physical speakers into the built-in microphone; Quick Talk returns to Mic off without a crash |
 | Recognition | Apple Speech, Parakeet, Moonshine and Whisper Turbo integrated; local fixture checks described below |
-| Pauses | Recognizer-confirmed speech plus input energy; Quick Talk pause and Keep Talking utterance flush |
+| Pauses | Quick Talk shortcut is hold-to-talk, with recording stopped and finalization started on release; button/menu starts retain pause completion; Keep Talking retains utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
 | Insertion | Native TextEdit insertion established; Chris confirms updated paste reaches the Codex composer, although Murmur's exact readback did not confirm it and retained the words for recovery |
-| TigerVNC | Recognizes the connected viewer window; remote Control–V default, Control–Shift–V or Command–V selectable; explicit modifier events and clipboard delivery delay; actual remote dictation retry pending |
+| TigerVNC | Remote Control–V default, Control–Shift–V or Command–V selectable; focus refresh triggers Mac clipboard announcement, clipboard-read acknowledgement replaces fixed waits; destination shown in transcript; actual remote dictation retry pending |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
@@ -29,6 +29,10 @@ release qualification remains separate from this working local app.
 - Build and launch scripts succeed. Switching from the installed app to Codex Run,
   then back to installation, leaves exactly one instance across both known bundles.
   Both paths use the same stable development signing identity.
+- The updated installed settings show hold/release instructions and Mic off.
+  Control–Option–Space remains the Quick Talk binding, with the user's 0.8-second
+  button pause, one-minute Keep Talking timeout and Control–V remote selection
+  preserved. The application is left on Dictation for the next human retry.
 - `/Applications/Murmur.app` passes `codesign --verify --deep --strict`.
 - Settings sidebar buttons accept clicks across the whole padded row, including
   blank space beside the labels. The same blank-space click failed before the fix
@@ -38,7 +42,7 @@ release qualification remains separate from this working local app.
   matches the current app after rebuilding. An older microphone permission also
   failed its code requirement; it was reset and the current app's consent completed.
   First-use microphone handling brings the app forward and labels the permission wait.
-- 30 core tests and 14 ordinary app checks pass, plus the previously accepted Apple single-phrase and continuous
+- 31 core tests and 20 ordinary app checks pass, plus the previously accepted Apple single-phrase and continuous
   integration checks. The previously accepted three optional engine checks remain valid;
   those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -95,9 +99,14 @@ release qualification remains separate from this working local app.
 - TigerVNC inspection exposed a connected desktop window without an editable AX
   field. Remote capture now applies only to TigerVNC's actual desktop window,
   preserving the app, window identity and title through delivery. Local viewer
-  dialogs and other applications do not receive the remote shortcut. Single-line
-  remote paste waits 750 ms for clipboard propagation and holds the clipboard
-  through a further two-second delivery window. Remote readback is unavailable,
+  dialogs and other applications do not receive the remote shortcut. The original
+  750 ms clipboard delay and further two-second delivery window did not fix Chris's
+  remote paste. Inspection of the installed TigerVNC binary and FLTK source shows
+  that the Mac viewer checks external clipboard changes on application activation.
+  The new handoff briefly returns focus through Murmur to the same viewer window,
+  revalidates it, sends paste once and waits only for a clipboard data request.
+  Focus changes stop delivery; a missing request reports a clipboard-sharing error.
+  Clipboard consumption does not confirm remote insertion. Remote readback is unavailable,
   so output reports Paste sent rather than Inserted. Remote fields/passwords cannot
   be inspected and multiline text remains for copying.
 - Three remote-event checks reproduce the old Command–V-only behavior and verify
@@ -105,6 +114,20 @@ release qualification remains separate from this working local app.
   absence of Enter and unchanged ordinary local paste. Three core checks cover
   viewer-window recognition and remote preference migration/round-trip. The installed
   Dictation picker exposes all three choices with Control–V selected and Mic off.
+- A held Quick Talk shortcut ignores speech pauses and buffers finalized words
+  until release. Recording stops before backend finalization and output, with one
+  insertion containing every finalized utterance. Keep Talking still inserts
+  each finalized utterance while listening. Coordinator checks use a simulated
+  capture source and backend, without opening the microphone or another app.
+  Releasing during preparation cancels startup; repeat and unmatched-release
+  suppression remain in the shortcut gate. Physical shortcut dispatch still needs
+  a human check. Recognition computation can still take time after release.
+- Clipboard regression checks cover refresh-before-paste ordering, focus changes,
+  bounded timeout without another paste, lazy UTF-8/Unicode clipboard consumption,
+  and immediate completion for unreadable editors. Local unreadable editors keep
+  their clipboard lease briefly in the background without delaying completion;
+  ownership checks preserve any newer user copy. The captured destination appears
+  beneath Transcript to distinguish local insertion from the TigerVNC route.
 - Chris's next human dictation reached the Codex composer. Murmur still could not
   confirm the exact resulting text and reported Dictation stopped. That terminal
   state had incorrectly kept the overlay expanded; it now hides automatically,
@@ -135,8 +158,10 @@ that gate. See [Apple's module documentation](https://developer.apple.com/docume
 
 - Retry human dictation into the connected TigerVNC Linux desktop. Code/event and
   settings checks do not establish remote clipboard synchronization or actual paste.
-  The current remote window contains Codex; its composer was not operated by the
-  agent through VNC. Keep clipboard sharing enabled in TigerVNC.
+  The native control tool exposes the viewer window but its input actions do not
+  reliably drive the remote desktop. No remote helper was installed. Keep
+  clipboard sharing enabled in TigerVNC; the new destination label identifies
+  whether Murmur captured the viewer or a local app.
 - Improve exact insertion readback compatibility with the Codex composer. Chris
   confirms that the updated paste reaches the field. The computer-use tool
   explicitly refuses the Codex app for safety reasons; this field cannot be

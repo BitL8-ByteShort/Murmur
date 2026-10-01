@@ -3,7 +3,16 @@ import CoreAudio
 import MurmurCore
 
 @MainActor
-final class CaptureService {
+protocol DictationCapture: AnyObject {
+    var onMeter: ((MeterFrame) -> Void)? { get set }
+    var onFailure: ((String) -> Void)? { get set }
+    var onPreparing: ((String) -> Void)? { get set }
+    func start(sessionID: UUID, microphoneID: String, inbox: AudioInbox, wake: AsyncStream<Void>.Continuation) async throws
+    func stop()
+}
+
+@MainActor
+final class CaptureService: DictationCapture {
     private var engine: AVAudioEngine?
     private var observer: NSObjectProtocol?
     private var token = UUID()

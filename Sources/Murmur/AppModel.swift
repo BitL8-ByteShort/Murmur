@@ -36,6 +36,7 @@ final class AppModel {
     @ObservationIgnored private let microphone = MicrophoneMonitor()
     @ObservationIgnored private var requestID = UUID()
     @ObservationIgnored private var dictationTask: Task<Void, Never>?
+    @ObservationIgnored private var holdingQuickTalk = false
 
     init() {
         if let data = UserDefaults.standard.data(forKey: "murmur.preferences.v1"),
@@ -66,16 +67,38 @@ final class AppModel {
 
     func toggleDictation(_ mode: CaptureMode) {
         if dictation.isActive {
+            holdingQuickTalk = false
             if dictation.phase == .preparing { cancelDictation() }
             else { Task { await dictation.finish() } }
             return
         }
+        startDictation(mode, held: false)
+    }
+    func beginHeldQuickTalk() {
+        guard !holdingQuickTalk, !dictation.isActive else { return }
+        holdingQuickTalk = true
+        startDictation(.quickTalk, held: true)
+    }
+    func releaseHeldQuickTalk() {
+        guard holdingQuickTalk else { return }
+        holdingQuickTalk = false
+        if dictation.phase == .listening, dictation.mode == .quickTalk {
+            Task { await dictation.finish() }
+        } else if dictation.phase == .preparing || !dictation.isActive {
+            // Releasing before preparation finishes must never open the mic later.
+            cancelDictation()
+        }
+    }
+    private func startDictation(_ mode: CaptureMode, held: Bool) {
         stopMonitor(); manuallyOpened = false
         let preferences = preferences
         let output = dictation.prepareOutput(copyOnly: preferences.copyOnly, remoteShortcut: preferences.remotePasteShortcut)
-        dictationTask = Task { await dictation.start(mode: mode, preferences: preferences, output: output) }
+        dictationTask = Task {
+            guard !Task.isCancelled else { return }
+            await dictation.start(mode: mode, preferences: preferences, output: output, heldQuickTalk: held)
+        }
     }
-    func cancelDictation() { dictationTask?.cancel(); dictation.cancel() }
+    func cancelDictation() { holdingQuickTalk = false; dictationTask?.cancel(); dictation.cancel() }
     func refreshModels() { installedModels = Set(SpeechEngine.allCases.filter { $0 != .apple && LocalModelStore.installed($0) }) }
     func refreshPermissions() { accessibilityGranted = TextInsertionService.permissionGranted; refreshModels() }
     func download(_ engine: SpeechEngine) {

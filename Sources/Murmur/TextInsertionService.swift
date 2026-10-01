@@ -10,9 +10,11 @@ import MurmurCore
         let terminal: Bool
         let remoteShortcut: RemotePasteShortcut?
         let remoteWindowTitle: String?
+        let appName: String
     }
     private var target: Target?
     private var inserted = Set<UUID>()
+    private var pendingClipboardRestore: (id: UUID, restore: () -> Void)?
     static var permissionGranted: Bool { AXIsProcessTrusted() }
     static func openPermissionSettings() {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
@@ -32,7 +34,7 @@ import MurmurCore
                                        focusedRole: attribute(focused ?? window, kAXRoleAttribute) as? String ?? ""),
            focused == nil || CFEqual(focused!, window), !hasSheet(window) {
             return Target(pid: app.processIdentifier, element: window, terminal: true,
-                          remoteShortcut: remoteShortcut, remoteWindowTitle: title)
+                          remoteShortcut: remoteShortcut, remoteWindowTitle: title, appName: app.localizedName ?? "TigerVNC")
         }
         guard let element = focused else { throw OutputSafetyError.noEditableField }
         guard !isSecure(element) else { throw OutputSafetyError.secureField }
@@ -43,7 +45,7 @@ import MurmurCore
         }
         return Target(pid: app.processIdentifier, element: element,
                       terminal: ["terminal", "iterm", "warp", "kitty", "alacritty"].contains { bundle.contains($0) },
-                      remoteShortcut: nil, remoteWindowTitle: nil)
+                      remoteShortcut: nil, remoteWindowTitle: nil, appName: app.localizedName ?? "App")
     }
     func begin(destination: Target?) { target = destination; inserted.removeAll() }
     func insert(_ text: String, utteranceID: UUID) async throws -> TextInsertionResult {
@@ -51,7 +53,18 @@ import MurmurCore
         guard let target else { throw OutputSafetyError.noEditableField }
         try validate(target, text: text)
         var restoreClipboard: (() -> Void)?
-        defer { restoreClipboard?() }
+        var delayRestoration = false
+        defer {
+            if delayRestoration, let restoreClipboard {
+                let leaseID = UUID()
+                pendingClipboardRestore = (leaseID, restoreClipboard)
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(1))
+                    restoreClipboard()
+                    if self?.pendingClipboardRestore?.id == leaseID { self?.pendingClipboardRestore = nil }
+                }
+            } else { restoreClipboard?() }
+        }
         let remote = target.remoteShortcut != nil
         let words = remote && !inserted.isEmpty ? " " + text : text
         let result = try await InsertionDelivery.deliver(words, prefersPaste: remote || isWebEditor(target.element),
@@ -62,17 +75,57 @@ import MurmurCore
                       settable.boolValue else { return false }
                 return AXUIElementSetAttributeValue(target.element, kAXSelectedTextAttribute as CFString, output as CFString) == .success
             }, paste: { output in
-                restoreClipboard = try self.publishPasteboard(output)
+                // Resolve our previous lease before snapshotting the clipboard
+                // for another utterance. Each restore also checks its owner token.
+                self.pendingClipboardRestore?.restore(); self.pendingClipboardRestore = nil
+                let provider = remote ? RequestedPasteboardText(output) : nil
+                restoreClipboard = try self.publishPasteboard(output, provider: provider)
                 if remote {
-                    // Allow the viewer to announce/send the new clipboard before
-                    // asking the remote application to consume it.
-                    try await Task.sleep(for: .milliseconds(750))
+                    try await RemoteClipboardHandoff.deliver(
+                        refresh: { try await self.refreshViewerClipboard(target, text: output) },
+                        requested: { provider?.wasRequested == true },
+                        validate: { try self.validate(target, text: output) },
+                        paste: { try self.postPaste(into: target, text: output) })
+                } else {
+                    try Task.checkCancellation()
+                    try self.postPaste(into: target, text: output)
                 }
-                try Task.checkCancellation()
-                try self.postPaste(into: target, text: output)
-            }, unconfirmedWaits: remote ? 50 : 25)
+            })
+        delayRestoration = !remote && result == .sent
         inserted.insert(utteranceID)
         return result
+    }
+    private func refreshViewerClipboard(_ target: Target, text: String) async throws {
+        try validate(target, text: text)
+        guard let viewer = NSRunningApplication(processIdentifier: target.pid) else { throw OutputSafetyError.targetChanged }
+        let current = NSRunningApplication.current
+        // TigerVNC/FLTK on macOS checks external clipboard changes in
+        // applicationDidBecomeActive, rather than polling while already active.
+        // Returning to the SAME viewer triggers its clipboard announcement and
+        // releases remote shortcut modifiers. Do not reactivate after a user
+        // switches to any other application.
+        guard current.activate(options: []) else { throw OutputSafetyError.remoteClipboardUnavailable }
+        defer {
+            if NSWorkspace.shared.frontmostApplication?.processIdentifier == current.processIdentifier {
+                _ = viewer.activate(options: [])
+            }
+        }
+        try await waitForActivation(current, allowedPrevious: target.pid)
+        try Task.checkCancellation()
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == current.processIdentifier,
+              viewer.activate(options: []) else { throw OutputSafetyError.targetChanged }
+        try await waitForActivation(viewer, allowedPrevious: current.processIdentifier)
+        try validate(target, text: text)
+    }
+    private func waitForActivation(_ app: NSRunningApplication, allowedPrevious: pid_t) async throws {
+        for _ in 0..<100 {
+            try Task.checkCancellation()
+            let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier
+            if pid == app.processIdentifier { return }
+            guard pid == allowedPrevious else { throw OutputSafetyError.targetChanged }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        throw OutputSafetyError.remoteClipboardUnavailable
     }
     private func validate(_ target: Target, text: String) throws {
         try OutputSafety.validate(targetPID: target.pid,
@@ -131,7 +184,7 @@ import MurmurCore
         }
         return false
     }
-    private func publishPasteboard(_ text: String) throws -> () -> Void {
+    private func publishPasteboard(_ text: String, provider: RequestedPasteboardText? = nil) throws -> () -> Void {
         let board = NSPasteboard.general
         var original: [[NSPasteboard.PasteboardType: Data]] = []
         for item in board.pasteboardItems ?? [] {
@@ -145,7 +198,10 @@ import MurmurCore
         let marker = NSPasteboard.PasteboardType("com.saltypanda.murmur.clipboard-lease")
         let token = UUID().uuidString
         board.clearContents()
-        let item = NSPasteboardItem(); item.setString(text, forType: .string); item.setString(token, forType: marker)
+        let item = NSPasteboardItem()
+        if let provider { item.setDataProvider(provider, forTypes: [.string]) }
+        else { item.setString(text, forType: .string) }
+        item.setString(token, forType: marker)
         guard board.writeObjects([item]) else {
             let items = original.map { types in
                 let saved = NSPasteboardItem()

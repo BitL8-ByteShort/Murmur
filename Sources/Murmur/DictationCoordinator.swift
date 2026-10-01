@@ -11,9 +11,10 @@ final class DictationCoordinator {
     private(set) var transcript = ""
     private(set) var partial = ""
     private(set) var notice: String?
+    private(set) var destinationDescription = ""
     private(set) var recovery = RecoveryBuffer()
     @ObservationIgnored var onChange: (() -> Void)?
-    @ObservationIgnored private let capture = CaptureService()
+    @ObservationIgnored private let capture: any DictationCapture
     @ObservationIgnored private var backend: (any SpeechBackend)?
     @ObservationIgnored private var assembler = TranscriptAssembler(sessionID: UUID())
     @ObservationIgnored private var sessionID = UUID()
@@ -30,15 +31,22 @@ final class DictationCoordinator {
     @ObservationIgnored private let insertion = TextInsertionService()
     @ObservationIgnored private var outputTask: Task<Void, Never>?
     @ObservationIgnored private var insertsIntoApp = false
+    @ObservationIgnored private var heldQuickTalk = false
     @ObservationIgnored private var delivery = InsertionDeliverySummary()
     @ObservationIgnored private var loadedEngine: SpeechEngine?
     @ObservationIgnored private var lastActivityText = ""
     @ObservationIgnored private var transcriptID = UUID()
     @ObservationIgnored private var transcriptDate = Date()
     @ObservationIgnored private let backendFactory: @MainActor (SpeechEngine) -> any SpeechBackend
+    @ObservationIgnored private let writeText: @MainActor (String, UUID) async throws -> TextInsertionResult
 
-    init(backendFactory: @escaping @MainActor (SpeechEngine) -> any SpeechBackend = DictationCoordinator.makeBackend) {
+    init(backendFactory: @escaping @MainActor (SpeechEngine) -> any SpeechBackend = DictationCoordinator.makeBackend,
+         capture: any DictationCapture = CaptureService(),
+         writeText: (@MainActor (String, UUID) async throws -> TextInsertionResult)? = nil) {
+        self.capture = capture
         self.backendFactory = backendFactory
+        let insertion = insertion
+        self.writeText = writeText ?? { text, id in try await insertion.insert(text, utteranceID: id) }
         capture.onMeter = { [weak self] in self?.meter = $0 }
         capture.onFailure = { [weak self] in self?.fail($0) }
         capture.onPreparing = { [weak self] message in
@@ -66,20 +74,25 @@ final class DictationCoordinator {
         catch { return .init(destination: nil, notice: error.localizedDescription) }
     }
 
-    func start(mode: CaptureMode, preferences: Preferences, output: PreparedOutput? = nil) async {
+    func start(mode: CaptureMode, preferences: Preferences, output: PreparedOutput? = nil, heldQuickTalk: Bool = false) async {
         guard !isActive else { return }
         let id = UUID(); sessionID = id
         recovery.save(sessionID: transcriptID, text: recoveryText, createdAt: transcriptDate)
         transcriptID = id; transcriptDate = Date()
         self.mode = mode; phase = .preparing; status = "Preparing \(preferences.engine.title)…"
+        self.heldQuickTalk = mode == .quickTalk && heldQuickTalk
         transcript = ""; partial = ""; notice = nil; meter = .silence
         let output = output ?? prepareOutput(copyOnly: preferences.copyOnly, remoteShortcut: preferences.remotePasteShortcut)
         insertion.begin(destination: output.destination)
         insertsIntoApp = output.destination != nil
+        destinationDescription = output.destination.map {
+            $0.appName + ($0.remoteShortcut.map { " · " + $0.title } ?? " · Mac insertion")
+        } ?? (preferences.copyOnly ? "Copy only" : "No destination captured")
         delivery = .init()
         notice = output.notice
         assembler.reset(sessionID: id)
-        endpoint = .init(mode: mode, silenceSeconds: preferences.silenceSeconds, inactivitySeconds: preferences.inactivitySeconds)
+        endpoint = .init(mode: mode, silenceSeconds: preferences.silenceSeconds, inactivitySeconds: preferences.inactivitySeconds,
+                         finishQuickTalkOnPause: !self.heldQuickTalk)
         speechDetected = false; flushing = false; lastActivityText = ""
         onChange?()
         let (eventStream, sink) = AsyncStream<SpeechEvent>.makeStream(bufferingPolicy: .bufferingOldest(512))
@@ -119,7 +132,7 @@ final class DictationCoordinator {
             try await capture.start(sessionID: id, microphoneID: preferences.microphoneID, inbox: inbox, wake: wake)
             try check(id)
             phase = .listening
-            status = mode == .quickTalk ? "Quick Talk · listening" : "Keep Talking · listening"
+            status = mode == .quickTalk ? (heldQuickTalk ? "Release to paste" : "Quick Talk · listening") : "Keep Talking · listening"
             startedAt = ProcessInfo.processInfo.systemUptime
             timer = Task { [weak self] in
                 while !Task.isCancelled {
@@ -168,24 +181,25 @@ final class DictationCoordinator {
             }
             if let text = assembler.update(utterance) {
                 transcript += transcript.isEmpty ? text : " " + text
-                if insertsIntoApp {
-                    let previous = outputTask, id = sessionID
-                    outputTask = Task { [weak self] in
-                        await previous?.value
-                        guard let self, self.sessionID == id, !Task.isCancelled else { return }
-                        do {
-                            let result = try await self.insertion.insert(text, utteranceID: utterance.id)
-                            guard self.sessionID == id else { return }
-                            self.delivery.record(result)
-                            if result == .sent {
-                                self.notice = "Paste sent. Check the destination; Murmur couldn't confirm the insertion. Your words remain available for copying."
-                            }
-                        }
-                        catch { if self.sessionID == id { self.insertsIntoApp = false; self.fail(error.localizedDescription) } }
-                    }
-                }
+                if !heldQuickTalk { enqueueInsertion(text, utteranceID: utterance.id) }
             }
             partial = assembler.partialText
+        }
+    }
+    private func enqueueInsertion(_ text: String, utteranceID: UUID) {
+        guard insertsIntoApp, !text.isEmpty else { return }
+        let previous = outputTask, id = sessionID
+        outputTask = Task { [weak self] in
+            await previous?.value
+            guard let self, self.sessionID == id, !Task.isCancelled else { return }
+            do {
+                let result = try await self.writeText(text, utteranceID)
+                guard self.sessionID == id else { return }
+                self.delivery.record(result)
+                if result == .sent {
+                    self.notice = "Paste sent. Check the destination; Murmur couldn't confirm the insertion. Your words remain available for copying."
+                }
+            } catch { if self.sessionID == id { self.insertsIntoApp = false; self.fail(error.localizedDescription) } }
         }
     }
     func finish() async {
@@ -200,6 +214,8 @@ final class DictationCoordinator {
             try check(id)
             try await backend?.finish()
             eventSink?.finish(); await events?.value
+            try check(id)
+            if heldQuickTalk { enqueueInsertion(transcript, utteranceID: id) }
             await outputTask?.value
             try check(id)
             partial = assembler.partialText
