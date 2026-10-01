@@ -8,6 +8,8 @@ import MurmurCore
         let pid: pid_t
         let element: AXUIElement
         let terminal: Bool
+        let remoteShortcut: RemotePasteShortcut?
+        let remoteWindowTitle: String?
     }
     private var target: Target?
     private var inserted = Set<UUID>()
@@ -17,19 +19,31 @@ import MurmurCore
         _ = AXIsProcessTrustedWithOptions(options)
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
-    func captureDestination() throws -> Target {
+    func captureDestination(remoteShortcut: RemotePasteShortcut = .controlV) throws -> Target {
         guard Self.permissionGranted else { throw OutputSafetyError.permissionRequired }
-        guard let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
-              let element = focusedElement(app.processIdentifier) else { throw OutputSafetyError.noEditableField }
+        guard let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+            throw OutputSafetyError.noEditableField
+        }
+        let focused = focusedElement(app.processIdentifier)
+        let bundle = app.bundleIdentifier?.lowercased() ?? ""
+        if let window = focusedWindow(app.processIdentifier),
+           let title = attribute(window, kAXTitleAttribute) as? String,
+           RemoteDesktopPolicy.accepts(bundleIdentifier: bundle, windowTitle: title,
+                                       focusedRole: attribute(focused ?? window, kAXRoleAttribute) as? String ?? ""),
+           focused == nil || CFEqual(focused!, window), !hasSheet(window) {
+            return Target(pid: app.processIdentifier, element: window, terminal: true,
+                          remoteShortcut: remoteShortcut, remoteWindowTitle: title)
+        }
+        guard let element = focused else { throw OutputSafetyError.noEditableField }
         guard !isSecure(element) else { throw OutputSafetyError.secureField }
         let role = attribute(element, kAXRoleAttribute) as? String ?? ""
         let editable = (attribute(element, "AXEditable") as? Bool) == true
         guard editable || [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role) else {
             throw OutputSafetyError.noEditableField
         }
-        let bundle = app.bundleIdentifier?.lowercased() ?? ""
         return Target(pid: app.processIdentifier, element: element,
-                      terminal: ["terminal", "iterm", "warp", "kitty", "alacritty"].contains { bundle.contains($0) })
+                      terminal: ["terminal", "iterm", "warp", "kitty", "alacritty"].contains { bundle.contains($0) },
+                      remoteShortcut: nil, remoteWindowTitle: nil)
     }
     func begin(destination: Target?) { target = destination; inserted.removeAll() }
     func insert(_ text: String, utteranceID: UUID) async throws -> TextInsertionResult {
@@ -38,8 +52,10 @@ import MurmurCore
         try validate(target, text: text)
         var restoreClipboard: (() -> Void)?
         defer { restoreClipboard?() }
-        let result = try await InsertionDelivery.deliver(text, prefersPaste: isWebEditor(target.element),
-            read: { self.snapshot(target.element) }, validate: { try self.validate(target, text: text) },
+        let remote = target.remoteShortcut != nil
+        let words = remote && !inserted.isEmpty ? " " + text : text
+        let result = try await InsertionDelivery.deliver(words, prefersPaste: remote || isWebEditor(target.element),
+            read: { remote ? nil : self.snapshot(target.element) }, validate: { try self.validate(target, text: text) },
             direct: { output in
                 var settable = DarwinBoolean(false)
                 guard AXUIElementIsAttributeSettable(target.element, kAXSelectedTextAttribute as CFString, &settable) == .success,
@@ -47,8 +63,14 @@ import MurmurCore
                 return AXUIElementSetAttributeValue(target.element, kAXSelectedTextAttribute as CFString, output as CFString) == .success
             }, paste: { output in
                 restoreClipboard = try self.publishPasteboard(output)
+                if remote {
+                    // Allow the viewer to announce/send the new clipboard before
+                    // asking the remote application to consume it.
+                    try await Task.sleep(for: .milliseconds(750))
+                }
+                try Task.checkCancellation()
                 try self.postPaste(into: target, text: output)
-            })
+            }, unconfirmedWaits: remote ? 50 : 25)
         inserted.insert(utteranceID)
         return result
     }
@@ -56,7 +78,27 @@ import MurmurCore
         try OutputSafety.validate(targetPID: target.pid,
                                   currentPID: NSWorkspace.shared.frontmostApplication?.processIdentifier ?? -1,
                                   secure: isSecure(target.element), terminal: target.terminal, text: text)
-        guard let current = focusedElement(target.pid), CFEqual(current, target.element) else { throw OutputSafetyError.targetChanged }
+        if let title = target.remoteWindowTitle {
+            guard let current = focusedWindow(target.pid), CFEqual(current, target.element),
+                  attribute(current, kAXTitleAttribute) as? String == title, !hasSheet(current) else {
+                throw OutputSafetyError.targetChanged
+            }
+            if let focused = focusedElement(target.pid), !CFEqual(focused, current) {
+                throw OutputSafetyError.targetChanged
+            }
+        } else {
+            guard let current = focusedElement(target.pid), CFEqual(current, target.element) else { throw OutputSafetyError.targetChanged }
+        }
+    }
+    private func focusedWindow(_ pid: pid_t) -> AXUIElement? {
+        guard let value = attribute(AXUIElementCreateApplication(pid), kAXFocusedWindowAttribute),
+              CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        return (value as! AXUIElement)
+    }
+    private func hasSheet(_ window: AXUIElement) -> Bool {
+        (attribute(window, kAXChildrenAttribute) as? [AXUIElement] ?? []).contains {
+            attribute($0, kAXRoleAttribute) as? String == kAXSheetRole
+        }
     }
     private func focusedElement(_ pid: pid_t) -> AXUIElement? {
         var value: CFTypeRef?
@@ -128,12 +170,9 @@ import MurmurCore
     }
     private func postPaste(into target: Target, text: String) throws {
         try validate(target, text: text)
-        guard let source = CGEventSource(stateID: .privateState),
-              let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
-              let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else { throw OutputSafetyError.noEditableField }
-        down.flags = .maskCommand; up.flags = .maskCommand
+        let events = try PasteKeyboardEvents.make(remoteShortcut: target.remoteShortcut)
         // Route through normal keyboard delivery so web/Electron editors receive
         // the paste command and input events, rather than a process-only event.
-        down.post(tap: .cghidEventTap); up.post(tap: .cghidEventTap)
+        for event in events { event.post(tap: .cghidEventTap) }
     }
 }

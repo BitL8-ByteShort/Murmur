@@ -1,6 +1,6 @@
 # Murmur status
 
-Updated September 30, 2026.
+Updated October 1, 2026.
 
 ## Checkpoint
 
@@ -20,6 +20,7 @@ release qualification remains separate from this working local app.
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
 | Insertion | Native TextEdit insertion established; Chris confirms updated paste reaches the Codex composer, although Murmur's exact readback did not confirm it and retained the words for recovery |
+| TigerVNC | Recognizes the connected viewer window; remote Control–V default, Control–Shift–V or Command–V selectable; explicit modifier events and clipboard delivery delay; actual remote dictation retry pending |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
 | Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
 
@@ -37,7 +38,7 @@ release qualification remains separate from this working local app.
   matches the current app after rebuilding. An older microphone permission also
   failed its code requirement; it was reset and the current app's consent completed.
   First-use microphone handling brings the app forward and labels the permission wait.
-- 27 core tests and 11 app checks pass, plus the previously accepted Apple single-phrase and continuous
+- 30 core tests and 14 ordinary app checks pass, plus the previously accepted Apple single-phrase and continuous
   integration checks. The previously accepted three optional engine checks remain valid;
   those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -91,6 +92,19 @@ release qualification remains separate from this working local app.
   double paste, web-editor selection with Unicode, no-op paste, unexpected edits,
   focus changes, unreadable fields and recognition without any delivery. No microphone
   or external app is used by these regression checks.
+- TigerVNC inspection exposed a connected desktop window without an editable AX
+  field. Remote capture now applies only to TigerVNC's actual desktop window,
+  preserving the app, window identity and title through delivery. Local viewer
+  dialogs and other applications do not receive the remote shortcut. Single-line
+  remote paste waits 750 ms for clipboard propagation and holds the clipboard
+  through a further two-second delivery window. Remote readback is unavailable,
+  so output reports Paste sent rather than Inserted. Remote fields/passwords cannot
+  be inspected and multiline text remains for copying.
+- Three remote-event checks reproduce the old Command–V-only behavior and verify
+  Control/Shift/Command press/release sequences, TigerVNC's macOS left-device flags,
+  absence of Enter and unchanged ordinary local paste. Three core checks cover
+  viewer-window recognition and remote preference migration/round-trip. The installed
+  Dictation picker exposes all three choices with Control–V selected and Mic off.
 - Chris's next human dictation reached the Codex composer. Murmur still could not
   confirm the exact resulting text and reported Dictation stopped. That terminal
   state had incorrectly kept the overlay expanded; it now hides automatically,
@@ -119,6 +133,10 @@ that gate. See [Apple's module documentation](https://developer.apple.com/docume
 
 ## Remaining qualification
 
+- Retry human dictation into the connected TigerVNC Linux desktop. Code/event and
+  settings checks do not establish remote clipboard synchronization or actual paste.
+  The current remote window contains Codex; its composer was not operated by the
+  agent through VNC. Keep clipboard sharing enabled in TigerVNC.
 - Improve exact insertion readback compatibility with the Codex composer. Chris
   confirms that the updated paste reaches the field. The computer-use tool
   explicitly refuses the Codex app for safety reasons; this field cannot be

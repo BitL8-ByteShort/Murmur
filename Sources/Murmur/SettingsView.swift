@@ -103,6 +103,13 @@ struct SettingsView: View {
                 }
             }.padding(18).card()
             VStack(alignment: .leading, spacing: 10) {
+                Picker("TigerVNC paste", selection: $model.preferences.remotePasteShortcut) {
+                    ForEach(RemotePasteShortcut.allCases) { Text($0.title).tag($0) }
+                }
+                Text("Only applies inside a TigerVNC desktop. Enable clipboard sharing in the viewer and click the remote text field before dictating. Murmur cannot inspect remote fields or passwords; it sends paste without Enter and keeps your words available for copying.")
+                    .font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }.padding(18).card()
+            VStack(alignment: .leading, spacing: 10) {
                 Toggle("Copy only", isOn: $model.preferences.copyOnly)
                 Text("With Copy only off, start from a text field in another app using your shortcut. Murmur keeps that destination for the whole session.")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
@@ -323,6 +330,7 @@ struct SettingsView: View {
             ForEach([
                 ("Microphone", "Starts only when you choose dictation or live preview. Finish, Cancel, Close, and Quit end capture."),
                 ("Accessibility", "Optional permission for typing into other apps. Murmur checks the destination and refuses password fields."),
+                ("Remote desktops", "TigerVNC uses the selected remote paste shortcut. Only the viewer window can be checked; remote fields and passwords are not visible to Murmur. Remote paste does not press Enter; multiline text stays available for copying."),
                 ("History", "No transcripts are written to disk. Previous attempts remain in memory for recovery until you clear them or quit."),
                 ("Network", "Only explicit model or language downloads use the network. Recognition is local. No analytics or cloud rewriting.")
             ], id: \.0) { item in

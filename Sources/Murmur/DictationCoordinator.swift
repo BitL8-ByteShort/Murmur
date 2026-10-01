@@ -60,9 +60,9 @@ final class DictationCoordinator {
         let destination: TextInsertionService.Target?
         let notice: String?
     }
-    func prepareOutput(copyOnly: Bool) -> PreparedOutput {
+    func prepareOutput(copyOnly: Bool, remoteShortcut: RemotePasteShortcut = .controlV) -> PreparedOutput {
         guard !copyOnly else { return .init(destination: nil, notice: nil) }
-        do { return .init(destination: try insertion.captureDestination(), notice: nil) }
+        do { return .init(destination: try insertion.captureDestination(remoteShortcut: remoteShortcut), notice: nil) }
         catch { return .init(destination: nil, notice: error.localizedDescription) }
     }
 
@@ -73,7 +73,7 @@ final class DictationCoordinator {
         transcriptID = id; transcriptDate = Date()
         self.mode = mode; phase = .preparing; status = "Preparing \(preferences.engine.title)…"
         transcript = ""; partial = ""; notice = nil; meter = .silence
-        let output = output ?? prepareOutput(copyOnly: preferences.copyOnly)
+        let output = output ?? prepareOutput(copyOnly: preferences.copyOnly, remoteShortcut: preferences.remotePasteShortcut)
         insertion.begin(destination: output.destination)
         insertsIntoApp = output.destination != nil
         delivery = .init()

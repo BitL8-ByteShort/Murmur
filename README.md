@@ -32,7 +32,7 @@ Cancel remains available while it loads. Only the selected model stays loaded.
 
 Allow Murmur in **System Settings → Privacy & Security → Accessibility** to type
 into other apps. Put the cursor in a text field before using the shortcut.
-Murmur checks that the same app and field are still focused. It refuses password
+For local apps, Murmur checks that the same app and field are still focused. It refuses password
 fields and multiline terminal insertion. It never presses Enter or sends a message.
 Without this permission, or with **Copy only** enabled, use the transcript's Copy button.
 
@@ -40,6 +40,15 @@ Murmur reports **Inserted** only after confirming the resulting text. Web editor
 receive ordinary paste. If an app doesn't expose enough information for confirmation,
 Murmur shows **Paste sent · check app**; check the destination before copying again.
 If insertion fails, your words remain in Murmur for copying.
+
+**TigerVNC:** click a text field in the remote desktop, then start dictation with
+your shortcut. Murmur automatically uses **Control–V** inside TigerVNC and keeps
+**Command–V** for local Mac apps. **Dictation → TigerVNC paste** also offers
+Control–Shift–V for Linux terminals and Command–V for a remote Mac.
+TigerVNC's [Send clipboard setting](https://tigervnc.org/doc/vncviewer.html) must be enabled.
+Remote output reports **Paste sent · check app**, because only the viewer window
+can be checked; Murmur cannot inspect remote fields or passwords. It never sends
+Enter, and multiline remote text remains available for copying.
 
 **Appearance → Try live microphone** tests the visuals without transcribing.
 Stop, Close, Cancel or Quit ends capture. The appearance sample with the mic off

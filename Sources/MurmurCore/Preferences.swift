@@ -25,6 +25,7 @@ public struct Preferences: Codable, Equatable, Sendable {
     public var silenceSeconds = 1.2
     public var inactivitySeconds = 300.0
     public var copyOnly = false
+    public var remotePasteShortcut: RemotePasteShortcut = .controlV
     public var historyDays = 0
     public var displayID = ""
     public var bottomOffset = 18.0
@@ -37,7 +38,7 @@ public struct Preferences: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case version, style, keepBarVisible, reduceMotion, engine, locale, microphoneID,
              silenceSeconds, inactivitySeconds, copyOnly, historyDays, displayID, bottomOffset,
-             visualizerIntensity, stillVisualizer, sounds, shortcuts
+             visualizerIntensity, stillVisualizer, sounds, shortcuts, remotePasteShortcut
     }
     public init(from decoder: any Decoder) throws {
         self.init()
@@ -51,6 +52,7 @@ public struct Preferences: Codable, Equatable, Sendable {
         silenceSeconds = min(3, max(0.7, (try? values.decode(Double.self, forKey: .silenceSeconds)) ?? 1.2))
         inactivitySeconds = (try? values.decode(Double.self, forKey: .inactivitySeconds)) ?? 300
         copyOnly = (try? values.decode(Bool.self, forKey: .copyOnly)) ?? false
+        remotePasteShortcut = (try? values.decode(RemotePasteShortcut.self, forKey: .remotePasteShortcut)) ?? .controlV
         historyDays = (try? values.decode(Int.self, forKey: .historyDays)) ?? 0
         displayID = (try? values.decode(String.self, forKey: .displayID)) ?? ""
         bottomOffset = (try? values.decode(Double.self, forKey: .bottomOffset)) ?? 18

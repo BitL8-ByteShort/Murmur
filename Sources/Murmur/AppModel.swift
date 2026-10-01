@@ -72,7 +72,7 @@ final class AppModel {
         }
         stopMonitor(); manuallyOpened = false
         let preferences = preferences
-        let output = dictation.prepareOutput(copyOnly: preferences.copyOnly)
+        let output = dictation.prepareOutput(copyOnly: preferences.copyOnly, remoteShortcut: preferences.remotePasteShortcut)
         dictationTask = Task { await dictation.start(mode: mode, preferences: preferences, output: output) }
     }
     func cancelDictation() { dictationTask?.cancel(); dictation.cancel() }

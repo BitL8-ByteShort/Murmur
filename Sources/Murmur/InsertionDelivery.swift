@@ -43,7 +43,8 @@ struct EditableTextSnapshot: Equatable {
 @MainActor enum InsertionDelivery {
     static func deliver(_ words: String, prefersPaste: Bool,
         read: () -> EditableTextSnapshot?, validate: () throws -> Void,
-        direct: (String) throws -> Bool, paste: (String) throws -> Void,
+        direct: (String) throws -> Bool, paste: (String) async throws -> Void,
+        unconfirmedWaits: Int = 25,
         pause: () async -> Void = { try? await Task.sleep(for: .milliseconds(40)) }
     ) async throws -> TextInsertionResult {
         try Task.checkCancellation()
@@ -83,14 +84,14 @@ struct EditableTextSnapshot: Equatable {
         try Task.checkCancellation()
         try validate()
         guard read() == before else { throw OutputSafetyError.targetChanged }
-        try paste(output)
+        try await paste(output)
         if expected != nil {
             guard try await observe(attempts: 50) else { throw OutputSafetyError.insertionNotConfirmed }
             return .verified
         }
         // Unreadable editors still receive ordinary paste. Keep the clipboard
         // available while they consume it, but never claim a verified insertion.
-        for _ in 0..<25 {
+        for _ in 0..<max(0, unconfirmedWaits) {
             try Task.checkCancellation()
             try validate()
             await pause()
