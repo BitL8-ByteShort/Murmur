@@ -4,7 +4,7 @@ import Testing
 import MurmurCore
 @testable import Murmur
 
-private final class EventCollector: @unchecked Sendable {
+final class EventCollector: @unchecked Sendable {
     private let lock = NSLock()
     private var collected: [SpeechEvent] = []
     func append(_ event: SpeechEvent) { lock.withLock { collected.append(event) } }

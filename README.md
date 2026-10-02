@@ -11,7 +11,7 @@ Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
 recognition and actual typing into TextEdit have been verified locally. More
 hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
 
-- **Quick Talk:** hold Control–Option–Space to talk; release to stop the mic and paste finalized words. There is no silence delay after release. Starting from a button or menu still finishes after the adjustable pause.
+- **Quick Talk:** hold Control–Option–Space to talk; release to finish and paste finalized words. A 120-millisecond ending buffer preserves the last syllable without waiting for a speech pause. Starting from a button or menu still finishes after the adjustable pause.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
 - **Show or close the bar:** Control–Option–B. Pin it without keeping the mic on.
 - **Four looks:** Waveform, Aura, Aura Ring and a teal Particle Wave, all in a compact 200 × 56-point bar.

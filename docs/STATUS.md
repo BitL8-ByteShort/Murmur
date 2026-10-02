@@ -16,7 +16,7 @@ release qualification remains separate from this working local app.
 | Crash repair | Original microphone callback moved outside MainActor; preview and dictation callback worker regressions pass |
 | Capture | Packaged app recognizes generated speech played through the physical speakers into the built-in microphone; Quick Talk returns to Mic off without a crash |
 | Recognition | Apple Speech, Parakeet, Moonshine and Whisper Turbo integrated; local fixture checks described below |
-| Pauses | Quick Talk shortcut is hold-to-talk, with recording stopped and finalization started on release; button/menu starts retain pause completion; Keep Talking retains utterance flush |
+| Pauses | Quick Talk shortcut is hold-to-talk: release starts finishing, captures a 120 ms ending buffer, then drains audio before recognition finalization; button/menu starts retain pause completion; Keep Talking retains utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
 | Insertion | Native TextEdit insertion established; Chris confirms updated paste reaches the Codex composer, although Murmur's exact readback did not confirm it and retained the words for recovery |
@@ -42,7 +42,7 @@ release qualification remains separate from this working local app.
   matches the current app after rebuilding. An older microphone permission also
   failed its code requirement; it was reset and the current app's consent completed.
   First-use microphone handling brings the app forward and labels the permission wait.
-- 31 core tests and 20 ordinary app checks pass, plus the previously accepted Apple single-phrase and continuous
+- 31 core tests and 23 ordinary app checks pass, plus the previously accepted Apple single-phrase and continuous
   integration checks. The previously accepted three optional engine checks remain valid;
   those engines were unchanged.
   Core checks cover stale identity/revisions, text preservation, bounded queues,
@@ -115,13 +115,27 @@ release qualification remains separate from this working local app.
   viewer-window recognition and remote preference migration/round-trip. The installed
   Dictation picker exposes all three choices with Control–V selected and Mic off.
 - A held Quick Talk shortcut ignores speech pauses and buffers finalized words
-  until release. Recording stops before backend finalization and output, with one
+  until release. Release keeps a 120 ms capture tail; recording and conversion
+  then drain before backend finalization and output, with one
   insertion containing every finalized utterance. Keep Talking still inserts
   each finalized utterance while listening. Coordinator checks use a simulated
   capture source and backend, without opening the microphone or another app.
   Releasing during preparation cancels startup; repeat and unmatched-release
   suppression remain in the shortcut gate. Physical shortcut dispatch still needs
   a human check. Recognition computation can still take time after release.
+- Chris's human release immediately after “Smooth operator” produced “smooth oper”;
+  the installed transcript confirmed that truncation with Parakeet selected.
+  The previous release removed the tap without allowing its last buffered callback.
+  A simulated final callback reproduces the truncated ending before the fix and
+  preserves the full ending after graceful capture finish. Cancellation during
+  the tail stops capture and prevents output. Cancel/Close/Quit have no tail delay.
+  The real 48 kHz → 16 kHz converter also retained 240 samples (15 ms) at shutdown;
+  EOF draining now returns all 1600 samples from a 4800-frame input and rejects late
+  callbacks. Conversion/drain stays on workers, with the stream closed only afterward.
+  An opt-in generated “Smooth operator” check passes through the actual capture
+  converter and installed Parakeet model, trimming long trailing silence to the
+  120 ms ending buffer. This qualifies the PCM/model path; a human shortcut retry
+  still establishes physical microphone timing.
 - Clipboard regression checks cover refresh-before-paste ordering, focus changes,
   bounded timeout without another paste, lazy UTF-8/Unicode clipboard consumption,
   and immediate completion for unreadable editors. Local unreadable editors keep

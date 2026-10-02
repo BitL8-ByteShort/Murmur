@@ -206,10 +206,12 @@ final class DictationCoordinator {
         guard phase == .listening else { return }
         let id = sessionID
         phase = .finalizing; status = "Finishing…"
-        capture.stop(); timer?.cancel(); timer = nil
-        wake?.finish(); wake = nil
+        timer?.cancel(); timer = nil
         onChange?()
         do {
+            try await capture.finish(tail: heldQuickTalk ? .milliseconds(120) : .zero)
+            try check(id)
+            wake?.finish(); wake = nil
             await worker?.value
             try check(id)
             try await backend?.finish()

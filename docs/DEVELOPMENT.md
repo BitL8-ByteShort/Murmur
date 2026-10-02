@@ -37,12 +37,23 @@ installed. These checks feed real PCM through the actual engine, finalize two
 utterances, and prepare a fresh warm session. Generated speech proves the backend
 path, not recognition of a human through the physical microphone.
 
+To check word endings through capture conversion and the installed Parakeet model:
+
+```sh
+say -o build/release-ending-fixture.wav --data-format=LEF32@48000 'Smooth operator.'
+MURMUR_ENDING_FIXTURE="$PWD/build/release-ending-fixture.wav" \
+  swift test --filter parakeetRecognizesCompleteEndingAfterCaptureDrain
+```
+
+This check trims the file's long trailing silence to 120 ms after the last sound.
+It exercises real conversion and recognition without opening a microphone.
+
 ## Hands-on qualification
 
 1. Fresh launch: microphone off, with pin independent of capture.
 2. Appearance: compare all four styles with live input and response strength.
 3. Install Apple language assets or select an explicitly downloaded local model.
-4. Quick Talk: hold the shortcut, speak through a pause, release and verify recording stops immediately, all finalized words are inserted once and the bar hides. Separately check button-started pause completion.
+4. Quick Talk: hold the shortcut, speak through a pause, release at the last word and verify the short 120 ms ending buffer preserves it, all finalized words are inserted once and the bar hides. Cancel/Close must stop immediately. Separately check button-started pause completion.
 5. Keep Talking: several thoughts, no duplicates or missing speech, finish manually.
 6. Enable Accessibility yourself. Focus a text field in another app, use the
    shortcut, verify focus and insertion at the caret. No Enter/send action.
