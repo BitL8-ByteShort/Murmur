@@ -26,7 +26,7 @@ enum LocalModelStore {
         let root = folder(engine)
         let name = switch engine { case .apple: ""; case .parakeet: "Parakeet"; case .moonshine: "Moonshine"; case .whisper: "Whisper" }
         guard !name.isEmpty else { return }
-        let source = Bundle.module.resourceURL!.appendingPathComponent("Licenses/Models/\(name)")
+        let source = AppResources.root.appendingPathComponent("Licenses/Models/\(name)")
         let licenses = root.appendingPathComponent("Licenses")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: licenses.path) { try FileManager.default.copyItem(at: source, to: licenses) }

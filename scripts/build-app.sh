@@ -9,6 +9,7 @@ mkdir -p "$MURMUR_APP/Contents/MacOS" "$MURMUR_APP/Contents/Resources"
 cp "$MURMUR_BIN/Murmur" "$MURMUR_APP/Contents/MacOS/Murmur"
 cp Resources/Info.plist "$MURMUR_APP/Contents/Info.plist"
 cp Resources/Murmur.icns "$MURMUR_APP/Contents/Resources/Murmur.icns"
+cp LICENSE THIRD_PARTY_NOTICES.md "$MURMUR_APP/Contents/Resources/"
 for MURMUR_RESOURCE in "$MURMUR_BIN"/*.bundle; do
     [[ -d "$MURMUR_RESOURCE" ]] || continue
     ditto "$MURMUR_RESOURCE" "$MURMUR_APP/Contents/Resources/$(basename "$MURMUR_RESOURCE")"

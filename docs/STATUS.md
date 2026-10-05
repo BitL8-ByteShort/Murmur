@@ -4,12 +4,13 @@ Updated October 4, 2026.
 
 ## Checkpoint
 
-Local dictation development app installed at `/Applications/Murmur.app`. Public
-release qualification remains separate from this working local app.
+Public preview 0.2.2 (4), with a Developer ID signed and Apple-notarized installer.
+The installed app is at `/Applications/Murmur.app`. Remaining human checks are
+listed below; a public preview does not turn those checks into accepted evidence.
 
 | Area | Current state |
 | --- | --- |
-| Repository | BitL8-ByteShort/Murmur, verified PRIVATE; current development preview 0.2.1 (3), including selected-microphone isolation |
+| Repository | BitL8-ByteShort/Murmur, public distribution approved by Chris; current public preview 0.2.2 (4), including selected-microphone isolation |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
 | Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; native input callback, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Automatic hiding after completion/failure; Always on or manual show retains a 100 × 28-point idle pill with the mic off; response strength, still/reduced motion, display selection, bottom offset |
@@ -22,9 +23,27 @@ release qualification remains separate from this working local app.
 | Insertion | Native TextEdit insertion established; Chris confirms updated paste reaches the Codex composer, although Murmur's exact readback did not confirm it and retained the words for recovery |
 | TigerVNC | Remote Control–V default, Control–Shift–V or Command–V selectable; focus refresh triggers Mac clipboard announcement, clipboard-read acknowledgement replaces fixed waits; destination shown in transcript; actual remote dictation retry pending |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
-| Distribution | Apple Development signature verified locally; no Developer ID/notarization/public installer |
+| Distribution | Developer ID signed, Apple-notarized 0.2.2 (4); strict signature, Gatekeeper, license and DMG verification passed |
 
 ## Accepted evidence
+
+- Public release packaging now has a repeatable Xcode archive/export/notarization
+  pipeline. The app and DMG include the existing Salty Panda proprietary preview
+  terms and all 79 dependency/model notice documents for four pinned packages.
+  The package includes no model weights, recordings, saved words or credentials.
+- Installed 0.2.2 (4) from the mounted, verified DMG using clean bundle replacement.
+  Strict signature verification and Gatekeeper accept the installed app as
+  Notarized Developer ID. Help → Licenses & Credits opens the bundled license.
+  A stale resource left by overlaying a development bundle was caught before
+  publication; local install now preserves the old bundle and replaces it cleanly.
+- Default Swift checks pass, with three opt-in model/file checks skipped. Saved
+  mic, model, shortcut, pause, remote-paste and visual preferences remain present.
+  The app launches with Mic off. The new public signature needs renewed microphone
+  consent and Accessibility authorization on this development Mac; macOS's consent
+  dialog is blocked to computer-use automation, and Accessibility refresh requires
+  the owner's Touch ID/password. Final public-signature live capture/paste is
+  pending that user step. Previous development-signature capture evidence below
+  remains valid for the unchanged audio path, not for new permission consent.
 
 - Microphone isolation regression reproduced before the fix: capture only bound
   the device without disabling output, and preview ignored the selected mic.
@@ -208,5 +227,7 @@ that gate. See [Apple's module documentation](https://developer.apple.com/docume
   full-screen Spaces and very long Keep Talking sessions.
 - Optional download cancellation and deletion/re-download.
 - Optional vocabulary/cleanup and opt-in disk history from the longer product plan.
-- Developer ID signing, notarization, clean install/DMG, model licensing review and
-  the release acceptance matrix before public distribution. Repo stays private.
+- Complete final public-signature microphone/paste checks after the owner renews
+  macOS permissions. Broader hardware, interruption and playback testing remain
+  public-preview qualification items. Signing/notarization, license inventory
+  and installer checks are complete; do not claim unperformed human tests.
