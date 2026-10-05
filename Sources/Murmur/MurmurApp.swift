@@ -36,7 +36,10 @@ struct MurmurApp: App {
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appSettings) { OpenSettingsButton() }
+            CommandGroup(after: .help) { OpenLicensesButton() }
         }
+        Window("Licenses & Credits", id: "licenses") { LicensesView() }
+            .defaultSize(width: 760, height: 600)
         MenuBarExtra("Murmur", systemImage: "waveform") {
             OpenSettingsButton()
             Button("Show voice bar") { model.showBar() }
@@ -63,5 +66,15 @@ private struct OpenSettingsButton: View {
             openWindow(id: "settings")
             NSApplication.shared.activate()
         }.keyboardShortcut(",")
+    }
+}
+
+private struct OpenLicensesButton: View {
+    @Environment(\.openWindow) private var openWindow
+    var body: some View {
+        Button("Licenses & Credits…") {
+            openWindow(id: "licenses")
+            NSApplication.shared.activate()
+        }
     }
 }

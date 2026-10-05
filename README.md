@@ -6,10 +6,10 @@ Murmur is a native Mac dictation app. Put your cursor in an app, use a shortcut,
 and talk. A small bar appears at the bottom of the screen, responds to your voice,
 then gets out of the way.
 
-**Current state: a local dictation development preview.** Apple Speech,
+**Public preview: 0.2.2 (build 4), for Apple Silicon and macOS 26+.** Apple Speech,
 Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
 recognition and actual typing into TextEdit have been verified locally. More
-hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
+hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This preview is for practical testing; remaining checks are tracked there.
 
 - **Quick Talk:** hold Control–Option–Space to talk; release to finish and paste finalized words. A 120-millisecond ending buffer preserves the last syllable without waiting for a speech pause. Starting from a button or menu still finishes after the adjustable pause.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
@@ -21,10 +21,16 @@ hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public
 - **Editable shortcuts:** click a binding in Shortcuts to record it. Escape cancels recording or active dictation.
 - **Recoverable text:** completed and partial words remain available for copying if insertion stops.
 
+[Download Murmur](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.2-public-preview.1)
+
+The installer contains a Developer ID signed, Apple-notarized app. Model weights
+are not bundled; language/model downloads are explicit inside Speech models.
+
 ## Use the Mac app
 
-Murmur is installed locally at `/Applications/Murmur.app`. Requires macOS 26+
-and Apple Silicon. The microphone starts off at launch.
+Open the DMG, drag Murmur into Applications, eject it and open the app. Requires
+macOS 26+ and Apple Silicon. The microphone starts off at launch. Updating keeps
+your saved preferences and models in place.
 
 In **Speech models**, install the selected Apple language or download an optional
 model, then choose **Use model**. Preparation happens when you start dictation;
@@ -83,7 +89,8 @@ swift test
 The Codex Run action builds and opens `build/Murmur.app`. Run and local installation
 stop the previous copy at either known path and use Chris's existing Apple
 Development certificate for a stable identity across updates.
-This is development signing, without Developer ID notarization or a public installer.
+These are development builds. Public installers use `./script/package_dmg.sh`
+to archive, export with Developer ID, notarize and verify the app before packaging.
 Override `MURMUR_SIGN_IDENTITY` to use a different local certificate.
 
 The default test suite doesn't open a microphone or download models. Optional
@@ -98,7 +105,14 @@ see [Development](docs/DEVELOPMENT.md). Fixture recognition isn't human micropho
 - [Architecture and Teleprompter reuse](docs/ARCHITECTURE.md)
 - [Development guide](docs/DEVELOPMENT.md)
 
-The [GitHub repo](https://github.com/BitL8-ByteShort/Murmur) is **private** and must
-stay that way until Chris explicitly approves making it public. Naming availability,
-distribution licensing and pricing haven't been selected. Bundled SDK and model
-notices are in `Sources/Murmur/Licenses`; model terms are also kept beside downloaded weights.
+The [GitHub repo](https://github.com/BitL8-ByteShort/Murmur) is public on Chris's
+approval. This is a free proprietary preview, not an open-source license. See
+[LICENSE](LICENSE), [contribution guidance](CONTRIBUTING.md), and the separately
+accepted [contributor agreement](CLA.md). Third-party libraries and models keep
+their own terms. Full notices are included in the app and DMG; open
+**Help → Licenses & Credits** to read them offline.
+
+[Report a bug](https://github.com/BitL8-ByteShort/Murmur/issues/new?template=bug_report.yml)
+with the app version, macOS/Mac model, selected mic and speech engine, and steps
+to reproduce it. Remove private dictated text from screenshots and reports.
+See [packaging](docs/PACKAGING.md) for the repeatable distribution workflow.
