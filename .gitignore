@@ -12,3 +12,5 @@ xcuserdata/
 *.m4a
 .env
 .env.*
+
+.superpowers/

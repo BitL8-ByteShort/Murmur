@@ -1,8 +1,8 @@
 # Murmur
 
 Read README.md and docs/STATUS.md before changing code. The product design and
-implementation plan are linked from the README. This is currently a native scaffold,
-not a finished dictation app. Keep that distinction visible in the app and docs.
+implementation plan are linked from the README. This is a native dictation development app. Keep local proof and public-release
+qualification distinct in the app and docs.
 
 - Preserve Quick Talk, Keep Talking, and pinned visibility as separate behaviors.
 - No microphone capture at launch. A pinned bar does not mean an active mic.

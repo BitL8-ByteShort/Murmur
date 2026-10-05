@@ -10,8 +10,9 @@ at the bottom center of the active screen. Chris selected direct dictation as th
 first-version focus and chose the name Murmur.
 
 The visualizer must respond to actual microphone input. Here, “voice synth” means
-a voice visualization, not generated speech. There are three appearances: Waveform,
-Aura, and Aura Ring. The ring is a donut with multiple colorful responding rings.
+a voice visualization, not generated speech. There are four appearances: Waveform,
+Aura, Aura Ring, and Particle Wave. The ring is a donut with multiple colorful
+responding rings. Particle Wave follows Chris's teal flowing particle reference.
 Each appearance shares the same controls and microphone status.
 
 This request covers a repository scaffold and a solid implementation plan. The
@@ -71,8 +72,9 @@ settings window with a sidebar. Avoid a large dashboard in the everyday flow.
 | Style | Idle | Listening |
 | --- | --- | --- |
 | Waveform | 112 × 32 pt capsule | 360 × 80 pt capsule with live bars, status, stop, and close |
-| Aura | Same idle capsule | 320 × 168 pt area with soft responding color fields above the controls |
+| Aura | Same idle capsule | 320 × 168 pt area with crisp responding color fields above the controls |
 | Aura Ring | Same idle capsule | 228 × 244 pt area with three colorful responding rings and controls |
+| Particle Wave | Same idle capsule | 480 × 180 pt area with a crisp teal particle cloud and controls |
 
 Dimensions are starting values and clamp to the visible screen. Expansion keeps
 the panel bottom center fixed, 18 pt above the Dock-safe visible-frame edge.
@@ -84,7 +86,10 @@ Transparent outer areas pass clicks through; only visible controls accept clicks
 All forms use bounded microphone energy data. Waveform uses time-domain amplitude
 bins; ring motion may use smoothed energy and frequency bands when available.
 Do not fabricate motion in a live session. Design preview uses a labeled static
-sample. Smooth attack/release, cap visual updates at 30 Hz, honor Reduce Motion and
+sample. Chris requested sharper Aura edges and faster response after trying the
+scaffold. Use a 512-frame tap, up to 60 Hz publication, 16 ms visual interpolation,
+and no Aura blur. Particle Wave uses deterministic particles with input-driven
+folding and no idle animation timer. Honor Reduce Motion and
 Reduce Transparency, and add a still visualizer option. Color alone must not convey
 listening, preparing, paused, insertion failure, or permission denial.
 
@@ -96,7 +101,7 @@ listening, preparing, paused, insertion failure, or permission denial.
 - Dictation: Quick Talk silence interval (0.7–3 seconds), Keep Talking inactivity,
   raw or basic cleanup, automatic punctuation where supported, custom vocabulary.
 - Shortcuts: record/reset bindings and explain conflicts in place.
-- Appearance: Waveform/Aura/Aura Ring, pinned bar, display, offset, reduced motion,
+- Appearance: Waveform/Aura/Aura Ring/Particle Wave, pinned bar, display, offset, reduced motion,
   intensity, light/dark/system theme, optional start/stop sounds.
 - Output: normal insertion, copy-only mode, clipboard restoration, manual retry.
 - Privacy: history off by default; optional 1/7/30-day local text retention,

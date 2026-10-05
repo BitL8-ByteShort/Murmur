@@ -28,7 +28,11 @@ public enum AudioMeter {
         }
         let rms = sqrt(energy / Float(samples.count))
         let decibels = 20 * log10(max(rms, 0.000001))
-        let level = max(0, min(1, (decibels + 60) / 60))
-        return MeterFrame(level: level, peaks: peaks.map { min(1, $0 * 5) })
+        let level = max(0, min(1, (decibels + 58) / 42))
+        // Map typical quiet microphone speech into a visible range. Linear peak*5
+        // made ordinary input almost stationary. The floor leaves silence still.
+        return MeterFrame(level: level, peaks: peaks.map {
+            max(0, min(1, (20 * log10(max($0, 0.000001)) + 54) / 42))
+        })
     }
 }

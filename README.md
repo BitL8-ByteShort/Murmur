@@ -2,61 +2,93 @@
 
 A little space for your voice.
 
-Murmur is a new native Mac dictation project. The goal is simple: put your cursor
-in an app, use a shortcut, and talk. A small bar appears at the bottom of the
-screen, responds to your voice, then gets out of the way.
+Murmur is a native Mac dictation app. Put your cursor in an app, use a shortcut,
+and talk. A small bar appears at the bottom of the screen, responds to your voice,
+then gets out of the way.
 
-**Current state: a buildable design scaffold.** It has a settings window, three
-visualizer styles, a floating bar, and an optional live microphone preview.
-It doesn't transcribe or insert text yet. Global shortcuts and model downloads
-are planned, and they're labeled that way in the app.
+**Current state: a local dictation development preview.** Apple Speech,
+Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
+recognition and actual typing into TextEdit have been verified locally. More
+hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This is not a public release.
 
-## What we're aiming for
+- **Quick Talk:** hold Control–Option–Space to talk; release to finish and paste finalized words. A 120-millisecond ending buffer preserves the last syllable without waiting for a speech pause. Starting from a button or menu still finishes after the adjustable pause.
+- **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
+- **Show or close the bar:** Control–Option–B. Pin it without keeping the mic on.
+- **Four looks:** Waveform, Aura, Aura Ring and a teal Particle Wave, all in a compact 200 × 56-point bar.
+- **Always on:** keep a tiny 100 × 28-point idle pill visible with the microphone off. Otherwise, the bar hides when dictation finishes or stops.
+- **Adjustable visuals:** response strength, reduced motion, still mode, display and bottom spacing.
+- **Local speech:** explicit language/model downloads. Downloading never selects a model or opens the microphone.
+- **Editable shortcuts:** click a binding in Shortcuts to record it. Escape cancels recording or active dictation.
+- **Recoverable text:** completed and partial words remain available for copying if insertion stops.
 
-- **Quick Talk:** say something, pause, and finish.
-- **Keep Talking:** stay listening between sentences until you stop it.
-- **A bar you can pin:** keep it visible without keeping the microphone on.
-- **Three looks:** a waveform, a soft aura, or colorful responding rings.
-- **Local speech:** Apple Speech first, with optional downloadable local models.
-- **Shortcuts you can change:** separate controls for talking and showing the bar.
-- **Reliable insertion:** keep text recoverable when the target app changes or a paste fails.
+## Use the Mac app
 
-Chris chose the name Murmur. Product naming availability hasn't been checked.
+Murmur is installed locally at `/Applications/Murmur.app`. Requires macOS 26+
+and Apple Silicon. The microphone starts off at launch.
 
-## Run the scaffold
+In **Speech models**, install the selected Apple language or download an optional
+model, then choose **Use model**. Preparation happens when you start dictation;
+Cancel remains available while it loads. Only the selected model stays loaded.
 
-Requires macOS 26+, Apple Silicon, and Xcode with Swift 6.
+Allow Murmur in **System Settings → Privacy & Security → Accessibility** to type
+into other apps. Put the cursor in a text field before using the shortcut.
+For local apps, Murmur checks that the same app and field are still focused. It refuses password
+fields and multiline terminal insertion. It never presses Enter or sends a message.
+Without this permission, or with **Copy only** enabled, use the transcript's Copy button.
+
+Murmur reports **Inserted** only after confirming the resulting text. Web editors
+receive ordinary paste. If an app doesn't expose enough information for confirmation,
+Murmur shows **Paste sent · check app**; check the destination before copying again.
+If insertion fails, your words remain in Murmur for copying.
+
+**TigerVNC:** click a text field in the remote desktop, then start dictation with
+your shortcut. Murmur automatically uses **Control–V** inside TigerVNC and keeps
+**Command–V** for local Mac apps. **Dictation → TigerVNC paste** also offers
+Control–Shift–V for Linux terminals and Command–V for a remote Mac.
+TigerVNC's [Send clipboard setting](https://tigervnc.org/doc/vncviewer.html) must be enabled.
+Remote output reports **Paste sent · check app**, because only the viewer window
+can be checked; Murmur cannot inspect remote fields or passwords. It never sends
+Enter, and multiline remote text remains available for copying.
+Murmur briefly activates itself and returns to the same TigerVNC window to trigger
+the Mac viewer's clipboard-change check. It stops if you switch to another app or
+viewer window. Completion follows a clipboard read rather than a fixed delay;
+that read does not prove remote text insertion. If the clipboard is not requested,
+Murmur keeps the words and reports a clipboard-sharing error. No remote helper is
+required. The transcript shows the captured destination and paste shortcut.
+
+**Dictation → Microphone** selects the input for both dictation and live preview.
+Murmur opens that input directly without changing your system input or playback
+device. You can use the MacBook or a USB mic while AirPods remain the output.
+If a selected mic disconnects, Murmur stops and retains your words instead of
+silently switching to another input. Changing the selection during capture stops
+that session; start again to use the new mic. Selecting a Bluetooth mic can still
+invoke macOS's own Bluetooth microphone mode.
+
+**Appearance → Try live microphone** tests the selected input and visuals without transcribing.
+Stop, Close, Cancel or Quit ends capture. The appearance sample with the mic off
+is static and labeled. Raw audio isn't saved, and no transcript history is written
+to disk. Recognized words remain in memory until cleared or the app quits. Starting again
+archives the previous transcript for recovery; closing the bar keeps the words.
+
+## Build, run and install
+
+Requires Xcode with Swift 6. Dependencies are pinned in `Package.resolved`.
 
 ```sh
-./script/build_and_run.sh
-```
-
-The Run action in Codex uses the same script. It quits the previous local Murmur
-instance, builds `build/Murmur.app` with a local development signature, then opens it. It isn't
-a signed and notarized installer for distribution. Use the app bundle for previewing
-microphone permissions instead of launching the bare executable.
-
-Choose a visualizer under **Appearance**. **Show voice bar** opens the small bar
-with the mic off. **Try live microphone** asks macOS for access and drives the
-visualizer with real input. That preview doesn't transcribe, save, or transmit audio.
-**Stop**, **Close bar**, or **Quit** ends capture. Closing the bar also clears its
-pin setting. Closing just the settings window leaves an explicitly started preview
-running; its status remains in the voice bar and menu bar.
-
-Appearance, pinning, and reduced-motion preferences are stored locally. Capture
-always starts off after a fresh launch. The appearance sample shown with the mic
-off is static and labeled as a preview.
-
-## Build and test
-
-```sh
-swift build
+./script/build_and_run.sh --verify
+./scripts/install-local.sh
 swift test
 ```
 
-There are no third-party package dependencies yet. The core library tests cover
-session transitions, stale callbacks, pinned visibility, preference round trips,
-and microphone meter bounds. They don't establish speech or insertion readiness.
+The Codex Run action builds and opens `build/Murmur.app`. Run and local installation
+stop the previous copy at either known path and use Chris's existing Apple
+Development certificate for a stable identity across updates.
+This is development signing, without Developer ID notarization or a public installer.
+Override `MURMUR_SIGN_IDENTITY` to use a different local certificate.
+
+The default test suite doesn't open a microphone or download models. Optional
+integration checks use an explicitly supplied audio file and already installed assets;
+see [Development](docs/DEVELOPMENT.md). Fixture recognition isn't human microphone evidence.
 
 ## Project guide
 
@@ -66,6 +98,7 @@ and microphone meter bounds. They don't establish speech or insertion readiness.
 - [Architecture and Teleprompter reuse](docs/ARCHITECTURE.md)
 - [Development guide](docs/DEVELOPMENT.md)
 
-The [GitHub repo](https://github.com/BitL8-ByteShort/Murmur) is **private** and must stay
-that way until Chris explicitly approves making it public.
-Distribution licensing and pricing haven't been selected.
+The [GitHub repo](https://github.com/BitL8-ByteShort/Murmur) is **private** and must
+stay that way until Chris explicitly approves making it public. Naming availability,
+distribution licensing and pricing haven't been selected. Bundled SDK and model
+notices are in `Sources/Murmur/Licenses`; model terms are also kept beside downloaded weights.

@@ -43,6 +43,26 @@ utterances are inserted once. A session UUID rejects old callbacks. Utterance UU
 prevent duplicate insertion. Keep Talking pins the initial target; target changes
 pause insertion rather than redirecting speech.
 
+## Selected microphone capture
+
+`CaptureService` and `MicrophoneMonitor` resolve the saved microphone UID before
+creating a shared `InputOnlyCapture` implementation. An explicit unavailable UID
+fails rather than using the default microphone. System default is resolved once
+at session start.
+
+The AUHAL unit enables input bus 1 and disables output bus 0 before binding the
+selected device. It negotiates client-side float PCM at the hardware's existing
+sample rate; it never sets the system default, hardware format/rate or an output
+device. The HAL callback renders into a preallocated buffer outside MainActor.
+CaptureBridge retains its bounded conversion/queue and end-of-stream drain.
+Stopping joins callbacks before releasing their context and audio unit.
+
+Device listeners observe only the selected input's alive, sample-rate and channel
+state. Playback changes cannot terminate an otherwise healthy built-in/USB input.
+Changing the saved input stops current capture and retains recoverable text; the
+next session opens the newly selected device. A Bluetooth mic's own profile
+behavior remains controlled by macOS.
+
 ## Reuse from Teleprompter
 
 The local reference is `/Users/chris/Projects/Teleprompter`.
