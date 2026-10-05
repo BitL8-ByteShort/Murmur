@@ -18,40 +18,34 @@ extension DictationCapture {
 
 @MainActor
 final class CaptureService: DictationCapture {
-    private var engine: AVAudioEngine?
-    private var observer: NSObjectProtocol?
+    private var input: (any MicrophoneInput)?
+    private let resolveDevice: (String) throws -> AudioDeviceID
+    private let makeInput: (AudioDeviceID) throws -> any MicrophoneInput
+    private let requestAccess: @MainActor ((() -> Void)?) async -> Bool
     private var token = UUID()
     private var bridge: CaptureBridge?
     var onMeter: ((MeterFrame) -> Void)?
     var onFailure: ((String) -> Void)?
     var onPreparing: ((String) -> Void)?
 
+    init(resolveDevice: @escaping (String) throws -> AudioDeviceID = InputDeviceStore.resolve,
+         makeInput: @escaping (AudioDeviceID) throws -> any MicrophoneInput = { try InputOnlyCapture(device: $0) },
+         requestAccess: @escaping @MainActor ((() -> Void)?) async -> Bool = MicrophonePermission.request) {
+        self.resolveDevice = resolveDevice; self.makeInput = makeInput
+        self.requestAccess = requestAccess
+    }
+
     func start(sessionID: UUID, microphoneID: String, inbox: AudioInbox,
                wake: AsyncStream<Void>.Continuation) async throws {
         stop()
         let generation = token
-        let permitted = await MicrophonePermission.request { [weak self] in
+        let permitted = await requestAccess { [weak self] in
             self?.onPreparing?("Waiting for microphone permission…")
         }
         guard generation == token else { throw CancellationError() }
         guard permitted else { throw SpeechFailure.unavailable("Enable Murmur under System Settings → Privacy & Security → Microphone.") }
-        let engine = AVAudioEngine()
-        let input = engine.inputNode
-        if !microphoneID.isEmpty {
-            guard var device = InputDeviceStore.microphones().first(where: { $0.id == microphoneID })?.deviceID,
-                  let unit = input.audioUnit else { throw SpeechFailure.unavailable("The selected microphone isn't connected.") }
-            var current = AudioDeviceID(0), size = UInt32(MemoryLayout<AudioDeviceID>.size)
-            let readStatus = AudioUnitGetProperty(unit, kAudioOutputUnitProperty_CurrentDevice,
-                                                 kAudioUnitScope_Global, 0, &current, &size)
-            // Setting the already-selected input needlessly rebuilds the graph and
-            // can deliver a configuration-change notification after capture starts.
-            if device != InputDeviceStore.defaultInputDevice(), (readStatus != noErr || current != device) {
-                let status = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
-                                                 &device, UInt32(MemoryLayout<AudioDeviceID>.size))
-                guard status == noErr else { throw SpeechFailure.unavailable("Couldn't select that microphone (\(status)).") }
-            }
-        }
-        let natural = input.outputFormat(forBus: 0)
+        let input = try makeInput(resolveDevice(microphoneID))
+        let natural = input.format
         guard natural.sampleRate > 0, natural.channelCount > 0,
               let mono = AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1) else {
             throw SpeechFailure.unavailable("No microphone input is available.")
@@ -59,17 +53,13 @@ final class CaptureService: DictationCapture {
         let bridge = try CaptureBridge(from: natural, to: mono, sessionID: sessionID, inbox: inbox, wake: wake,
             meter: { [weak self] frame in Task { @MainActor in guard self?.token == generation else { return }; self?.onMeter?(frame) } },
             failure: { [weak self] message in Task { @MainActor in guard self?.token == generation else { return }; self?.onFailure?(message) } })
-        input.installTap(onBus: 0, bufferSize: 512, format: natural, block: Self.tap(for: bridge))
         self.bridge = bridge
-        self.engine = engine
-        engine.prepare()
-        do { try engine.start() } catch { stop(); throw error }
-        observer = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
-            Task { @MainActor in
-                guard self?.token == generation else { return }
-                self?.onFailure?("Microphone configuration changed. Your text is retained; start again when the input is ready.")
-            }
-        }
+        self.input = input
+        do {
+            try input.start(receive: Self.tap(for: bridge), failure: { [weak self] message in
+                Task { @MainActor in guard self?.token == generation else { return }; self?.onFailure?(message) }
+            })
+        } catch { stop(); throw error }
     }
     // Explicitly outside MainActor; this is the boundary implicated in the original crash.
     nonisolated static func tap(for bridge: CaptureBridge) -> AVAudioNodeTapBlock {
@@ -100,9 +90,8 @@ final class CaptureService: DictationCapture {
         onMeter?(.silence)
     }
     private func stopGraph() {
-        if let observer { NotificationCenter.default.removeObserver(observer) }; observer = nil
-        if let engine { engine.inputNode.removeTap(onBus: 0); engine.stop() }
-        engine = nil
+        input?.stop()
+        input = nil
     }
 }
 

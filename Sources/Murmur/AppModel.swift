@@ -6,6 +6,11 @@ import MurmurCore
 final class AppModel {
     var preferences: Preferences {
         didSet {
+            if oldValue.microphoneID != preferences.microphoneID {
+                // Also invalidate a queued start before the coordinator becomes active.
+                dictationTask?.cancel(); holdingQuickTalk = false
+                interrupt("Microphone changed. Start again to use the selected input.")
+            }
             if let data = try? JSONEncoder().encode(preferences) {
                 UserDefaults.standard.set(data, forKey: "murmur.preferences.v1")
             }
@@ -168,7 +173,7 @@ final class AppModel {
         onOverlayChange?()
         Task {
             do {
-                let started = try await microphone.start()
+                let started = try await microphone.start(microphoneID: preferences.microphoneID)
                 guard requestID == token else { return }
                 preparing = false; monitoring = started
             } catch {

@@ -36,7 +36,7 @@ struct SettingsView: View {
                 }
                 Spacer()
                 Label("Local dictation", systemImage: "lock").font(.system(size: 11)).foregroundStyle(.secondary)
-                Text("0.2.0 · Development preview").font(.system(size: 10)).foregroundStyle(.tertiary)
+                Text("0.2.1 · Development preview").font(.system(size: 10)).foregroundStyle(.tertiary)
             }
             .padding(24).frame(width: 222).background(MurmurTheme.surface.opacity(0.6))
             Rectangle().fill(.white.opacity(0.06)).frame(width: 1)

@@ -1,6 +1,6 @@
 # Murmur status
 
-Updated October 1, 2026.
+Updated October 4, 2026.
 
 ## Checkpoint
 
@@ -9,12 +9,12 @@ release qualification remains separate from this working local app.
 
 | Area | Current state |
 | --- | --- |
-| Repository | BitL8-ByteShort/Murmur, verified PRIVATE; development branch jorvek/murmur-app |
+| Repository | BitL8-ByteShort/Murmur, verified PRIVATE; microphone fix on jorvek/input-only-microphones, based on jorvek/murmur-app |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
-| Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; input requests 512-frame tap, meter capped at 60 Hz, 16 ms interpolation |
+| Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; native input callback, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Automatic hiding after completion/failure; Always on or manual show retains a 100 × 28-point idle pill with the mic off; response strength, still/reduced motion, display selection, bottom offset |
 | Crash repair | Original microphone callback moved outside MainActor; preview and dictation callback worker regressions pass |
-| Capture | Packaged app recognizes generated speech played through the physical speakers into the built-in microphone; Quick Talk returns to Mic off without a crash |
+| Capture | Input-only AUHAL shared by dictation and preview; selected mic is independent of system defaults/output. Installed 0.2.1 (3): built-in and USB live input work with AirPods connected |
 | Recognition | Apple Speech, Parakeet, Moonshine and Whisper Turbo integrated; local fixture checks described below |
 | Pauses | Quick Talk shortcut is hold-to-talk: release starts finishing, captures a 120 ms ending buffer, then drains audio before recognition finalization; button/menu starts retain pause completion; Keep Talking retains utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
@@ -26,6 +26,27 @@ release qualification remains separate from this working local app.
 
 ## Accepted evidence
 
+- Microphone isolation regression reproduced before the fix: capture only bound
+  the device without disabling output, and preview ignored the selected mic.
+  Both paths now enable input bus 1, disable output bus 0, then bind the selected
+  device before initialization. No system defaults or hardware formats are set.
+  Only the selected input's alive/rate/channel state can interrupt capture.
+- The full `swift test` suite passes; three optional model/file checks remain
+  skipped by default. New hardware-free checks cover output-disable ordering and
+  failure, explicit selection over an AirPods default, missing-device refusal,
+  selected-input dictation/preview, EOF drain, stale callbacks and cancellation
+  during a pending permission request. These tests never open a microphone.
+- Installed 0.2.1 (3), signed with the existing development identity and verified
+  with exactly one running app. Native live preview received nonzero input from
+  both MacBook Pro Microphone and Brio 100 USB. Before, during and after capture,
+  AirPods remained alive as default input (24 kHz) and output (48 kHz); all observed
+  device rates and defaults were unchanged. This establishes coexistence and live
+  capture, not an audible playback-continuity test or human dictation accuracy.
+- Parakeet remained selected. A native Keep Talking session with the built-in
+  mic reached listening and finished cleanly with No speech detected. Copy only
+  was temporarily enabled to prevent insertion into another app, then restored
+  off. Final settings show MacBook Pro Microphone and Mic off; shortcut, model,
+  pause, inactivity, visual and TigerVNC preferences were preserved.
 - Build and launch scripts succeed. Switching from the installed app to Codex Run,
   then back to installation, leaves exactly one instance across both known bundles.
   Both paths use the same stable development signing identity.

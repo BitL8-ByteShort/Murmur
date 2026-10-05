@@ -1,44 +1,47 @@
 import AVFoundation
+import CoreAudio
 import MurmurCore
 
 @MainActor
 final class MicrophoneMonitor {
-    private let engine = AVAudioEngine()
-    private var tapInstalled = false
+    private var input: (any MicrophoneInput)?
+    private let resolveDevice: (String) throws -> AudioDeviceID
+    private let makeInput: (AudioDeviceID) throws -> any MicrophoneInput
+    private let requestAccess: @MainActor () async -> Bool
     private(set) var generation = UUID()
     private var lastPublication = 0.0
     var onFrame: ((MeterFrame) -> Void)?
     var onInterrupted: (() -> Void)?
-    private var configurationObserver: NSObjectProtocol?
 
-    init() {
-        configurationObserver = NotificationCenter.default.addObserver(
-            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in self?.onInterrupted?() }
-        }
+    init(resolveDevice: @escaping (String) throws -> AudioDeviceID = InputDeviceStore.resolve,
+         makeInput: @escaping (AudioDeviceID) throws -> any MicrophoneInput = { try InputOnlyCapture(device: $0) },
+         requestAccess: @escaping @MainActor () async -> Bool = { await MicrophonePermission.request() }) {
+        self.resolveDevice = resolveDevice; self.makeInput = makeInput
+        self.requestAccess = requestAccess
     }
 
-    func start() async throws -> Bool {
+    func start(microphoneID: String = "") async throws -> Bool {
         stop()
         lastPublication = 0
         let token = generation
-        let allowed = await MicrophonePermission.request()
+        let allowed = await requestAccess()
         guard token == generation else { return false }
         guard allowed else { throw MonitorError.denied }
-        let input = engine.inputNode
-        let format = input.outputFormat(forBus: 0)
-        guard format.sampleRate > 0, format.channelCount > 0 else { throw MonitorError.noInput }
-        input.installTap(onBus: 0, bufferSize: 512, format: format, block: makeTap(sessionToken: token))
-        tapInstalled = true
-        engine.prepare()
-        do { try engine.start() }
-        catch { stop(); throw error }
+        let input = try makeInput(resolveDevice(microphoneID))
+        self.input = input
+        do {
+            try input.start(receive: makeTap(sessionToken: token), failure: { [weak self] _ in
+                Task { @MainActor in
+                    guard self?.generation == token else { return }
+                    self?.onInterrupted?()
+                }
+            })
+        } catch { stop(); throw error }
         return true
     }
 
-    // Construct the callback outside actor isolation: AVAudioEngine invokes it on
-    // RealtimeMessenger, not MainActor. Only publishing the immutable frame hops back.
+    // Construct the callback outside actor isolation: HAL invokes it on its audio
+    // worker. Only publishing the immutable frame hops back to MainActor.
     nonisolated func makeTap(sessionToken token: UUID) -> AVAudioNodeTapBlock {
         { [weak self] buffer, _ in
             guard let channel = buffer.floatChannelData?[0] else { return }
@@ -57,8 +60,7 @@ final class MicrophoneMonitor {
 
     func stop() {
         generation = UUID()
-        engine.stop()
-        if tapInstalled { engine.inputNode.removeTap(onBus: 0); tapInstalled = false }
+        input?.stop(); input = nil
         onFrame?(.silence)
     }
 }

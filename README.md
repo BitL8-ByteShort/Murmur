@@ -56,7 +56,15 @@ that read does not prove remote text insertion. If the clipboard is not requeste
 Murmur keeps the words and reports a clipboard-sharing error. No remote helper is
 required. The transcript shows the captured destination and paste shortcut.
 
-**Appearance → Try live microphone** tests the visuals without transcribing.
+**Dictation → Microphone** selects the input for both dictation and live preview.
+Murmur opens that input directly without changing your system input or playback
+device. You can use the MacBook or a USB mic while AirPods remain the output.
+If a selected mic disconnects, Murmur stops and retains your words instead of
+silently switching to another input. Changing the selection during capture stops
+that session; start again to use the new mic. Selecting a Bluetooth mic can still
+invoke macOS's own Bluetooth microphone mode.
+
+**Appearance → Try live microphone** tests the selected input and visuals without transcribing.
 Stop, Close, Cancel or Quit ends capture. The appearance sample with the mic off
 is static and labeled. Raw audio isn't saved, and no transcript history is written
 to disk. Recognized words remain in memory until cleared or the app quits. Starting again
