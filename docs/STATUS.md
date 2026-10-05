@@ -9,7 +9,7 @@ release qualification remains separate from this working local app.
 
 | Area | Current state |
 | --- | --- |
-| Repository | BitL8-ByteShort/Murmur, verified PRIVATE; microphone fix on jorvek/input-only-microphones, based on jorvek/murmur-app |
+| Repository | BitL8-ByteShort/Murmur, verified PRIVATE; current development preview 0.2.1 (3), including selected-microphone isolation |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
 | Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; native input callback, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Automatic hiding after completion/failure; Always on or manual show retains a 100 × 28-point idle pill with the mic off; response strength, still/reduced motion, display selection, bottom offset |
