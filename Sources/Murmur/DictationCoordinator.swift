@@ -67,10 +67,11 @@ final class DictationCoordinator {
     struct PreparedOutput {
         let destination: TextInsertionService.Target?
         let notice: String?
+        var resolve: (@MainActor () async throws -> TextInsertionService.Target)? = nil
     }
     func prepareOutput(copyOnly: Bool, remoteShortcut: RemotePasteShortcut = .controlV) -> PreparedOutput {
         guard !copyOnly else { return .init(destination: nil, notice: nil) }
-        do { return .init(destination: try insertion.captureDestination(remoteShortcut: remoteShortcut), notice: nil) }
+        do { return .init(destination: nil, notice: nil, resolve: try insertion.prepareDestination(remoteShortcut: remoteShortcut)) }
         catch { return .init(destination: nil, notice: error.localizedDescription) }
     }
 
@@ -82,7 +83,14 @@ final class DictationCoordinator {
         self.mode = mode; phase = .preparing; status = "Preparing \(preferences.engine.title)…"
         self.heldQuickTalk = mode == .quickTalk && heldQuickTalk
         transcript = ""; partial = ""; notice = nil; meter = .silence
-        let output = output ?? prepareOutput(copyOnly: preferences.copyOnly, remoteShortcut: preferences.remotePasteShortcut)
+        var output = output ?? prepareOutput(copyOnly: preferences.copyOnly, remoteShortcut: preferences.remotePasteShortcut)
+        onChange?()
+        if let resolve = output.resolve {
+            do { output = .init(destination: try await resolve(), notice: nil) }
+            catch { output = .init(destination: nil, notice: error.localizedDescription) }
+            // Cancel/release while the tree starts must never reopen capture later.
+            guard sessionID == id, !Task.isCancelled else { return }
+        }
         insertion.begin(destination: output.destination)
         insertsIntoApp = output.destination != nil
         destinationDescription = output.destination.map {

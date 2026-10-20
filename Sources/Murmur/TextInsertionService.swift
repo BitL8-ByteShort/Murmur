@@ -2,6 +2,26 @@ import AppKit
 @preconcurrency import ApplicationServices
 import MurmurCore
 
+@MainActor enum FocusedDestinationResolver {
+    static func resolve<T>(read: () throws -> T?, requestAccessibility: () -> Bool,
+                           validate: () throws -> Void,
+                           pause: (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) async throws -> T {
+        try validate()
+        try Task.checkCancellation()
+        if let value = try read() { return value }
+        guard requestAccessibility() else { throw OutputSafetyError.noEditableField }
+        // Electron exposes its focused editor asynchronously after this request.
+        // Never block the UI thread or keep trying after the destination changes.
+        for delay in [20, 40, 80, 160] {
+            try await pause(.milliseconds(delay))
+            try Task.checkCancellation()
+            try validate()
+            if let value = try read() { return value }
+        }
+        throw OutputSafetyError.noEditableField
+    }
+}
+
 /// The original app and focused field stay fixed throughout a dictation session.
 @MainActor final class TextInsertionService {
     struct Target {
@@ -21,11 +41,35 @@ import MurmurCore
         _ = AXIsProcessTrustedWithOptions(options)
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
-    func captureDestination(remoteShortcut: RemotePasteShortcut = .controlV) throws -> Target {
+    func prepareDestination(remoteShortcut: RemotePasteShortcut = .controlV) throws -> @MainActor () async throws -> Target {
         guard Self.permissionGranted else { throw OutputSafetyError.permissionRequired }
         guard let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
             throw OutputSafetyError.noEditableField
         }
+        // Pin the app/window synchronously at shortcut-down, before any suspension
+        // or overlay update. A retry must never redirect output to a new target.
+        let window = focusedWindow(app.processIdentifier)
+        return {
+            try await FocusedDestinationResolver.resolve(read: {
+                do { return try self.captureDestination(in: app, remoteShortcut: remoteShortcut) }
+                catch OutputSafetyError.noEditableField { return nil }
+            }, requestAccessibility: {
+                AXUIElementSetAttributeValue(AXUIElementCreateApplication(app.processIdentifier),
+                    "AXManualAccessibility" as CFString, kCFBooleanTrue) == .success
+            }, validate: {
+                guard NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else {
+                    throw OutputSafetyError.targetChanged
+                }
+                if let window {
+                    guard let current = self.focusedWindow(app.processIdentifier), CFEqual(window, current) else {
+                        throw OutputSafetyError.targetChanged
+                    }
+                }
+                guard Self.permissionGranted else { throw OutputSafetyError.permissionRequired }
+            })
+        }
+    }
+    private func captureDestination(in app: NSRunningApplication, remoteShortcut: RemotePasteShortcut) throws -> Target {
         let focused = focusedElement(app.processIdentifier)
         let bundle = app.bundleIdentifier?.lowercased() ?? ""
         if let window = focusedWindow(app.processIdentifier),

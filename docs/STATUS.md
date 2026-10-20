@@ -1,6 +1,35 @@
 # Murmur status
 
-Updated October 4, 2026.
+Updated October 20, 2026.
+
+## Focused-editor repair candidate
+
+0.2.3 (5) is installed locally with focused-editor startup recovery. The public
+download remains 0.2.2 until the affected Codex composer is retried by Chris.
+
+- The installed 0.2.2 app recognized the reported speech and retained it, but
+  showed `No destination captured` and a missing-focused-field notice. Its
+  Accessibility permission was present; this differs from the earlier stale
+  development-signature permission failure.
+- The old capture path read the focused field once. The repair uses Electron's
+  documented `AXManualAccessibility` request only when no usable field is found,
+  then retries asynchronously for at most 300 ms. A ready editor has no delay.
+  App/window identity stays pinned from shortcut-down. Unsupported apps,
+  password fields, destination changes and cancellation fail closed.
+- The microphone path, 120 ms ending capture, recognition finalization and paste
+  delivery are unchanged. No model, raw audio, transcript or UI-content logging
+  is added.
+- Seven focused resolver checks reproduce the missing recovery before the fix
+  (five failed tests, six issues) and pass afterward. The full default Swift
+  checks pass; three optional model/file checks remain skipped.
+- Release archive/export, Apple notarization, stapling, strict signature checks,
+  Gatekeeper, 79 notice documents/four package pins and DMG verification pass.
+  Installed the verified DMG with clean bundle replacement, preserving the previous
+  public bundle locally. The signing requirement matches 0.2.2. Native settings
+  show version 0.2.3, Mic off, Copy only off and typing permission still present;
+  microphone, shortcut, pause and remote-paste preferences are preserved.
+- Computer-use access to Codex itself is blocked by the tool. A real composer
+  retry by Chris is required before claiming this affected destination is fixed.
 
 ## Checkpoint
 
