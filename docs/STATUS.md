@@ -2,10 +2,10 @@
 
 Updated October 20, 2026.
 
-## Focused-editor repair candidate
+## Focused-editor repair
 
 0.2.3 (5) is installed locally with focused-editor startup recovery. The public
-download remains 0.2.2 until the affected Codex composer is retried by Chris.
+download remains 0.2.2; the repair is on its own pull request.
 
 - The installed 0.2.2 app recognized the reported speech and retained it, but
   showed `No destination captured` and a missing-focused-field notice. Its
@@ -28,8 +28,10 @@ download remains 0.2.2 until the affected Codex composer is retried by Chris.
   public bundle locally. The signing requirement matches 0.2.2. Native settings
   show version 0.2.3, Mic off, Copy only off and typing permission still present;
   microphone, shortcut, pause and remote-paste preferences are preserved.
-- Computer-use access to Codex itself is blocked by the tool. A real composer
-  retry by Chris is required before claiming this affected destination is fixed.
+- Chris retried Quick Talk in this Codex chat after installation and confirmed
+  that the words pasted successfully. This establishes the affected-destination
+  retry through human confirmation. Computer-use access to Codex itself remains
+  blocked by the tool; no automated composer inspection is claimed.
 
 ## Checkpoint
 
