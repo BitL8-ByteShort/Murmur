@@ -6,7 +6,7 @@ Murmur is a native Mac dictation app. Put your cursor in an app, use a shortcut,
 and talk. A small bar appears at the bottom of the screen, responds to your voice,
 then gets out of the way.
 
-**Public preview: 0.2.2 (build 4), for Apple Silicon and macOS 26+.** Apple Speech,
+**Public preview: 0.2.3 (build 5), for Apple Silicon and macOS 26+.** Apple Speech,
 Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
 recognition and actual typing into TextEdit have been verified locally. More
 hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This preview is for practical testing; remaining checks are tracked there.
@@ -21,7 +21,7 @@ hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This preview is for 
 - **Editable shortcuts:** click a binding in Shortcuts to record it. Escape cancels recording or active dictation.
 - **Recoverable text:** completed and partial words remain available for copying if insertion stops.
 
-[Download Murmur](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.2-public-preview.1)
+[Download Murmur](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.3-public-preview.1)
 
 The installer contains a Developer ID signed, Apple-notarized app. Model weights
 are not bundled; language/model downloads are explicit inside Speech models.

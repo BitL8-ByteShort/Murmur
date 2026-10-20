@@ -1,16 +1,47 @@
 # Murmur status
 
-Updated October 4, 2026.
+Updated October 20, 2026.
+
+## Focused-editor repair
+
+Public preview 0.2.3 (5) includes focused-editor startup recovery. The installed
+app and public installer include the repair confirmed by Chris in the Codex chat.
+
+- The installed 0.2.2 app recognized the reported speech and retained it, but
+  showed `No destination captured` and a missing-focused-field notice. Its
+  Accessibility permission was present; this differs from the earlier stale
+  development-signature permission failure.
+- The old capture path read the focused field once. The repair uses Electron's
+  documented `AXManualAccessibility` request only when no usable field is found,
+  then retries asynchronously for at most 300 ms. A ready editor has no delay.
+  App/window identity stays pinned from shortcut-down. Unsupported apps,
+  password fields, destination changes and cancellation fail closed.
+- The microphone path, 120 ms ending capture, recognition finalization and paste
+  delivery are unchanged. No model, raw audio, transcript or UI-content logging
+  is added.
+- Seven focused resolver checks reproduce the missing recovery before the fix
+  (five failed tests, six issues) and pass afterward. The full default Swift
+  checks pass; three optional model/file checks remain skipped.
+- Release archive/export, Apple notarization, stapling, strict signature checks,
+  Gatekeeper, 79 notice documents/four package pins and DMG verification pass.
+  Installed the verified DMG with clean bundle replacement, preserving the previous
+  public bundle locally. The signing requirement matches 0.2.2. Native settings
+  show version 0.2.3, Mic off, Copy only off and typing permission still present;
+  microphone, shortcut, pause and remote-paste preferences are preserved.
+- Chris retried Quick Talk in this Codex chat after installation and confirmed
+  that the words pasted successfully. This establishes the affected-destination
+  retry through human confirmation. Computer-use access to Codex itself remains
+  blocked by the tool; no automated composer inspection is claimed.
 
 ## Checkpoint
 
-Public preview 0.2.2 (4), with a Developer ID signed and Apple-notarized installer.
+Public preview 0.2.3 (5), with a Developer ID signed and Apple-notarized installer.
 The installed app is at `/Applications/Murmur.app`. Remaining human checks are
 listed below; a public preview does not turn those checks into accepted evidence.
 
 | Area | Current state |
 | --- | --- |
-| Repository | BitL8-ByteShort/Murmur, public distribution approved by Chris; current public preview 0.2.2 (4), including selected-microphone isolation |
+| Repository | BitL8-ByteShort/Murmur, public distribution approved by Chris; current public preview 0.2.3 (5), including focused-editor recovery and selected-microphone isolation |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
 | Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; native input callback, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Automatic hiding after completion/failure; Always on or manual show retains a 100 × 28-point idle pill with the mic off; response strength, still/reduced motion, display selection, bottom offset |
@@ -20,10 +51,10 @@ listed below; a public preview does not turn those checks into accepted evidence
 | Pauses | Quick Talk shortcut is hold-to-talk: release starts finishing, captures a 120 ms ending buffer, then drains audio before recognition finalization; button/menu starts retain pause completion; Keep Talking retains utterance flush |
 | Downloads | Explicit progress/cancel, selection separate, model receipts, recoverable deletion to Trash |
 | Shortcuts | Three global defaults, editable recorder, repeat suppression, transactional rollback; native end-to-end checks pending |
-| Insertion | Native TextEdit insertion established; Chris confirms updated paste reaches the Codex composer, although Murmur's exact readback did not confirm it and retained the words for recovery |
+| Insertion | Native TextEdit insertion established; Chris confirmed Quick Talk pastes into the affected Codex composer after installing 0.2.3; no automated Codex readback is claimed |
 | TigerVNC | Remote Control–V default, Control–Shift–V or Command–V selectable; focus refresh triggers Mac clipboard announcement, clipboard-read acknowledgement replaces fixed waits; destination shown in transcript; actual remote dictation retry pending |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
-| Distribution | Developer ID signed, Apple-notarized 0.2.2 (4); strict signature, Gatekeeper, license and DMG verification passed |
+| Distribution | Developer ID signed, Apple-notarized 0.2.3 (5); strict signature, Gatekeeper, license and DMG verification passed |
 
 ## Accepted evidence
 
@@ -38,12 +69,12 @@ listed below; a public preview does not turn those checks into accepted evidence
   publication; local install now preserves the old bundle and replaces it cleanly.
 - Default Swift checks pass, with three opt-in model/file checks skipped. Saved
   mic, model, shortcut, pause, remote-paste and visual preferences remain present.
-  The app launches with Mic off. The new public signature needs renewed microphone
-  consent and Accessibility authorization on this development Mac; macOS's consent
-  dialog is blocked to computer-use automation, and Accessibility refresh requires
-  the owner's Touch ID/password. Final public-signature live capture/paste is
-  pending that user step. Previous development-signature capture evidence below
-  remains valid for the unchanged audio path, not for new permission consent.
+  The app launches with Mic off. At the initial 0.2.2 public install, renewed
+  microphone consent and owner-authenticated Accessibility authorization were
+  pending. Those permissions were subsequently renewed. The 0.2.3 install retains
+  the same signing requirement and typing authorization, and Chris confirmed
+  actual paste into Codex. Previous development-signature capture evidence below
+  remains scoped to the unchanged audio path and its tested hardware.
 
 - Microphone isolation regression reproduced before the fix: capture only bound
   the device without disabling output, and preview ignored the selected mic.
