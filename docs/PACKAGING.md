@@ -3,8 +3,8 @@
 The installer is a compressed `.dmg` containing `Murmur.app`, an
 Applications shortcut, short install instructions, and full license documents. The app inside is signed
 with **Developer ID Application: Salty Panda LLC** and notarized by Apple.
-The current public preview is version 0.2.2 (build 4), available from
-[GitHub Releases](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.2-public-preview.1).
+The current public preview is version 0.2.3 (build 5), available from
+[GitHub Releases](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.3-public-preview.1).
 The Mac App Store is not a distribution channel for this release.
 
 ## Install the app
@@ -42,7 +42,7 @@ Outputs:
 
 The filename and install instructions follow the exported bundle's version
 and build, set in `Resources/Info.plist`.
-The current source and installer are 0.2.2 (build 4). Each new installer must
+The current source and installer are 0.2.3 (build 5). Each new installer must
 pass its own signing, notarization, and validation checks before upload.
 Generated installers, archives, models, and build logs are ignored by Git. Installers can be attached
 to this repository's GitHub releases. Keep preview releases marked as prereleases

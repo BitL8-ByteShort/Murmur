@@ -14,7 +14,7 @@ body:
     attributes:
       label: App version and build
       description: Find this under Murmur → About Murmur.
-      placeholder: "0.2.2 (build 4)"
+      placeholder: "0.2.3 (build 5)"
     validations:
       required: true
   - type: textarea
