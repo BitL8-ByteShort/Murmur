@@ -1,9 +1,9 @@
 # Repository access
 
-Chris approved Murmur's first public preview on October 4, 2026.
-Public visibility allows reading, forks and proposed pull requests. It does not
-provide write access or change the proprietary preview license.
+Murmur is public and open source under GPL-3.0-only, approved by Chris on
+October 22, 2026. Public use, modification and redistribution follow [LICENSE](../LICENSE).
+Repository visibility does not grant write access or signing credentials.
 
-The owner reviews contributions before merging. No collaborators, deploy keys,
-credentials or other access are added by the public release workflow. See
-[CONTRIBUTING.md](../CONTRIBUTING.md) and [CLA.md](../CLA.md).
+The owner reviews pull requests before merging. No collaborators, deploy keys,
+credentials or other access are added by the release workflow. New contributions
+use the same GPL terms without a separate CLA; see [CONTRIBUTING.md](../CONTRIBUTING.md).

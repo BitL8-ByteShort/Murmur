@@ -55,10 +55,10 @@ The local reference is `/Users/chris/Projects/Teleprompter`.
 | `App/HotkeyManager.swift` | Global registration and duplicate detection | Add Quick Talk/Keep Talking and transactional rebinding |
 | `App/OverlayController.swift` | Nonactivating panel | Bottom-center active display, style expansion, click-through verification |
 
-No source files were copied from Teleprompter into this app. Its current
-first-party license is proprietary; check ownership and distribution intent before
-porting code or importing third-party notices. Speech-model licenses are separate
-from framework licenses. No open-source license has been assigned to Murmur.
+No source files were copied from Teleprompter into this app. Check ownership
+and license compatibility before porting code or importing third-party notices.
+Murmur is GPL-3.0-only; that does not relicense Teleprompter or third-party
+frameworks. Speech-model weights have separate licenses.
 
 ## Version and compatibility decisions
 

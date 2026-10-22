@@ -3,8 +3,8 @@
 The installer is a compressed `.dmg` containing `Murmur.app`, an
 Applications shortcut, short install instructions, and full license documents. The app inside is signed
 with **Developer ID Application: Salty Panda LLC** and notarized by Apple.
-The current public preview is version 0.2.3 (build 5), available from
-[GitHub Releases](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.3-public-preview.1).
+The open-source release is version 0.2.4 (build 6), available from
+[GitHub Releases](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.4).
 The Mac App Store is not a distribution channel for this release.
 
 ## Install the app
@@ -38,15 +38,17 @@ Outputs:
 
 - `dist/Murmur-<version>-arm64.dmg`
 - `dist/Murmur-<version>-arm64.dmg.sha256`
+- Matching source archive and checksum prepared from the release tag (below)
 - Build, export, and notarization logs under `build/packaging/`
 
 The filename and install instructions follow the exported bundle's version
 and build, set in `Resources/Info.plist`.
-The current source and installer are 0.2.3 (build 5). Each new installer must
+The current version is 0.2.4 (build 6). Each new installer must
 pass its own signing, notarization, and validation checks before upload.
 Generated installers, archives, models, and build logs are ignored by Git. Installers can be attached
-to this repository's GitHub releases. Keep preview releases marked as prereleases
-and include a link to the [bug-report form](https://github.com/BitL8-ByteShort/Murmur/issues/new?template=bug_report.yml).
+to this repository's GitHub releases. Include source access and a link to the
+[bug-report form](https://github.com/BitL8-ByteShort/Murmur/issues/new?template=bug_report.yml).
+Open-source licensing does not imply completion of the remaining hardware checks.
 
 To package an app that is already signed, notarized, and stapled:
 
@@ -61,7 +63,8 @@ without a valid notarization ticket won't pass.
 
 `Sources/Murmur/Licenses/` contains the full third-party texts and a manifest with source
 URLs, dependency revisions, and checksums. The app includes that folder, the
-project's `LICENSE`, and `THIRD_PARTY_NOTICES.md` as signed resources. The same
+project's `LICENSE`, `NOTICE`, `SOURCE.md`, `TRADEMARKS.md` and
+`THIRD_PARTY_NOTICES.md` as signed resources. The same
 documents are copied beside the app on the disk image.
 
 Packaging checks dependency pins against the inventory and verifies every
@@ -75,6 +78,26 @@ python3 script/verify_licenses.py --bundle build/packaging/export/Murmur.app
 Update the inventory and license documents when changing dependency versions.
 Optional model downloads receive their own terms before downloading weights;
 models installed by earlier releases receive those documents when first used.
+
+## Source access with each installer
+
+Version 0.2.4 is GPL-3.0-only. After committing and tagging the exact release
+source, create its source archive and checksum:
+
+```sh
+git archive --format=tar.gz --prefix=Murmur-0.2.4/ \
+  -o dist/Murmur-0.2.4-source.tar.gz v0.2.4
+(cd dist && shasum -a 256 Murmur-0.2.4-source.tar.gz > Murmur-0.2.4-source.tar.gz.sha256)
+```
+
+Attach both source files beside the DMG/checksum on the same release. Link the
+archive and [SOURCE.md](../SOURCE.md) directly in the release notes. That document
+identifies pinned Swift/native sources, their build scripts and dependency
+records. Confirm that source and binary downloads are accessible without login.
+Maintain equivalent access if an upstream source location becomes unavailable.
+
+Historical 0.2.3 and earlier installers contain their original preview terms;
+the GPL release replaces the current download rather than changing those files.
 
 ## If notarization hasn't finished
 

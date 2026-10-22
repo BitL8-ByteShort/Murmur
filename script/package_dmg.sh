@@ -89,6 +89,7 @@ trap 'rm -rf "$STAGING_ROOT"' EXIT
 ditto "$APP_BUNDLE" "$STAGING_ROOT/Murmur.app"
 ln -s /Applications "$STAGING_ROOT/Applications"
 cp "$TASK_ROOT/LICENSE" "$STAGING_ROOT/LICENSE.txt"
+cp "$TASK_ROOT/NOTICE" "$TASK_ROOT/SOURCE.md" "$TASK_ROOT/TRADEMARKS.md" "$STAGING_ROOT/"
 cp "$TASK_ROOT/THIRD_PARTY_NOTICES.md" "$STAGING_ROOT/THIRD_PARTY_NOTICES.md"
 ditto "$TASK_ROOT/Sources/Murmur/Licenses" "$STAGING_ROOT/Licenses"
 cat > "$STAGING_ROOT/Install.txt" <<TXT
@@ -112,7 +113,9 @@ and inside the app. Open Help > Licenses & Credits to read them. Optional model
 downloads also receive their own license documents beside the model files.
 
 Murmur $VERSION (build $BUILD_VERSION).
-Preview release for public testing. Report bugs using the link below.
+Open-source release under GNU GPLv3, without warranty. Report bugs using the link below.
+Source and build instructions: https://github.com/BitL8-ByteShort/Murmur/releases/tag/v$VERSION
+The release includes a source archive. Read SOURCE.md for dependency source locations.
 
 Downloads and release notes:
 https://github.com/BitL8-ByteShort/Murmur/releases

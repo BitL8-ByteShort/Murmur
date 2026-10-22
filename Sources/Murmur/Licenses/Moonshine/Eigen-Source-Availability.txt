@@ -5,6 +5,6 @@ available at no charge at:
 https://github.com/moonshine-ai/moonshine/tree/234f60faa0eb388b01cdf7e60aca232af37aefda/core/third-party/Eigen
 
 These files remain licensed under MPL-2.0. You may obtain, modify, and
-redistribute this covered source under that license. Teleprompter's
-proprietary terms do not restrict those rights. Teleprompter has not
-modified these Eigen files. See COPYING.MPL2 for the full license.
+redistribute this covered source under that license. Murmur's GPL terms
+do not replace those rights. Murmur has not modified these Eigen files.
+See COPYING.MPL2 for the full license.

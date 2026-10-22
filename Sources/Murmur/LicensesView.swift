@@ -6,7 +6,7 @@ struct LicensesView: View {
         let resources = AppResources.root
         let root = resources.appendingPathComponent("Licenses")
         let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey])
-        var result = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+        var result = ["LICENSE", "NOTICE", "SOURCE.md", "TRADEMARKS.md", "THIRD_PARTY_NOTICES.md"]
         while let file = enumerator?.nextObject() as? URL {
             guard file.pathExtension != "pdf", file.lastPathComponent != "manifest.json",
                   (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
@@ -25,7 +25,7 @@ struct LicensesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Licenses & Credits").font(.title2.bold())
-            Text("Murmur is maintained by Salty Panda LLC. Libraries and models keep their own license terms.")
+            Text("Murmur is open source under GNU GPLv3, without warranty. You may modify and redistribute it under that license. Libraries and models keep their own terms.")
                 .foregroundStyle(.secondary)
             Picker("Document", selection: $selection) {
                 ForEach(files, id: \.self) { file in

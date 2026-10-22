@@ -1,8 +1,9 @@
 # Third-party notices
 
-Murmur is maintained by Salty Panda LLC under the project's proprietary
-license. The libraries and models below keep their own terms. Murmur's
-license and contributor agreement do not replace or restrict those rights.
+Murmur's first-party code is GPL-3.0-only, maintained by Salty Panda LLC and
+contributors. The libraries and separately downloaded models below keep their
+own terms. Murmur's license does not replace their licenses. See SOURCE.md for
+pinned source locations and build instructions.
 
 Full license texts and copyright notices are included in [Sources/Murmur/Licenses](Sources/Murmur/Licenses).
 That folder ships inside the signed app as `Contents/Resources/Licenses` and
@@ -28,8 +29,8 @@ are not used by this Mac build. The vendored doctest license is also retained.
 Eigen's covered source remains under MPL-2.0. Its corresponding source is
 available at no charge from the exact Moonshine source revision identified in
 [Eigen-Source-Availability.txt](Sources/Murmur/Licenses/Moonshine/Eigen-Source-Availability.txt).
-Murmur does not modify that source. Its proprietary terms do not limit
-the rights MPL-2.0 grants in those files.
+Murmur does not modify that source. The MPL-2.0 rights in those files remain
+available under their own license.
 
 FluidAudio's NemoTextProcessing binary is pinned to the v0.3.1 artifact. Its
 Apache license, NOTICE, NVIDIA NeMo attribution, and full license texts for the

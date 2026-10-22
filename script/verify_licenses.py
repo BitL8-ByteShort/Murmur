@@ -32,7 +32,7 @@ def verify(bundle=None):
     if bundle:
         resources = Path(bundle) / 'Contents/Resources'
         folders.append(resources / 'Licenses')
-        for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md']:
+        for name in ['LICENSE', 'NOTICE', 'SOURCE.md', 'TRADEMARKS.md', 'THIRD_PARTY_NOTICES.md']:
             assert (resources / name).read_bytes() == (ROOT / name).read_bytes(), f'Stale or missing app document: {name}'
     for folder in folders:
         assert json.loads((folder / 'manifest.json').read_text()) == manifest, f'Stale manifest in {folder}'

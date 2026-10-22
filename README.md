@@ -6,10 +6,10 @@ Murmur is a native Mac dictation app. Put your cursor in an app, use a shortcut,
 and talk. A small bar appears at the bottom of the screen, responds to your voice,
 then gets out of the way.
 
-**Public preview: 0.2.3 (build 5), for Apple Silicon and macOS 26+.** Apple Speech,
+**Open source under GPLv3. Version 0.2.4 (build 6), for Apple Silicon and macOS 26+.** Apple Speech,
 Parakeet Realtime, Moonshine Small and Whisper Turbo are integrated. Microphone
 recognition and actual typing into TextEdit have been verified locally. More
-hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This preview is for practical testing; remaining checks are tracked there.
+hands-on checks for this early release are tracked in [STATUS.md](docs/STATUS.md).
 
 - **Quick Talk:** hold Control–Option–Space to talk; release to finish and paste finalized words. A 120-millisecond ending buffer preserves the last syllable without waiting for a speech pause. Starting from a button or menu still finishes after the adjustable pause.
 - **Keep Talking:** stay listening between thoughts. Default: Control–Option–D.
@@ -21,7 +21,7 @@ hands-on checks are tracked in [STATUS.md](docs/STATUS.md). This preview is for 
 - **Editable shortcuts:** click a binding in Shortcuts to record it. Escape cancels recording or active dictation.
 - **Recoverable text:** completed and partial words remain available for copying if insertion stops.
 
-[Download Murmur](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.3-public-preview.1)
+[Download Murmur](https://github.com/BitL8-ByteShort/Murmur/releases/tag/v0.2.4)
 
 The installer contains a Developer ID signed, Apple-notarized app. Model weights
 are not bundled; language/model downloads are explicit inside Speech models.
@@ -78,20 +78,21 @@ archives the previous transcript for recovery; closing the bar keeps the words.
 
 ## Build, run and install
 
-Requires Xcode with Swift 6. Dependencies are pinned in `Package.resolved`.
+Requires Xcode 26 with Swift 6. Dependencies are pinned in `Package.resolved`.
 
 ```sh
-./script/build_and_run.sh --verify
-./scripts/install-local.sh
 swift test
+MURMUR_SIGN_IDENTITY=- ./scripts/build-app.sh --run
 ```
 
-The Codex Run action builds and opens `build/Murmur.app`. Run and local installation
-stop the previous copy at either known path and use Chris's existing Apple
-Development certificate for a stable identity across updates.
-These are development builds. Public installers use `./script/package_dmg.sh`
-to archive, export with Developer ID, notarize and verify the app before packaging.
-Override `MURMUR_SIGN_IDENTITY` to use a different local certificate.
+This makes an ad-hoc-signed development build at `build/Murmur.app`. Set
+`MURMUR_SIGN_IDENTITY` to your own certificate for a stable development identity.
+The maintainer's Run and local-install helpers use Chris's certificate by default;
+override that variable when using those helpers on another Mac. Changing signing
+identities can require renewed microphone/Accessibility approval.
+Public installers use `./script/package_dmg.sh` to archive, export with Developer
+ID, notarize and verify the app before packaging. See [SOURCE.md](SOURCE.md) for
+source access, native dependencies and instructions for modified builds.
 
 The default test suite doesn't open a microphone or download models. Optional
 integration checks use an explicitly supplied audio file and already installed assets;
@@ -105,12 +106,24 @@ see [Development](docs/DEVELOPMENT.md). Fixture recognition isn't human micropho
 - [Architecture and Teleprompter reuse](docs/ARCHITECTURE.md)
 - [Development guide](docs/DEVELOPMENT.md)
 
-The [GitHub repo](https://github.com/BitL8-ByteShort/Murmur) is public on Chris's
-approval. This is a free proprietary preview, not an open-source license. See
-[LICENSE](LICENSE), [contribution guidance](CONTRIBUTING.md), and the separately
-accepted [contributor agreement](CLA.md). Third-party libraries and models keep
-their own terms. Full notices are included in the app and DMG; open
-**Help → Licenses & Credits** to read them offline.
+## License and source
+
+Murmur is free, open-source software under [GNU GPL version 3 only](LICENSE).
+You can use, study, modify, share and sell it under those terms. Distributed
+modified versions must provide corresponding source under GPLv3 and preserve
+recipients' rights. Private modifications do not have to be published.
+
+Source and build instructions are available in this repository and beside each
+new binary release; see [SOURCE.md](SOURCE.md). Contributions use the same
+license without a separate CLA; see [CONTRIBUTING.md](CONTRIBUTING.md).
+The [name and logo policy](TRADEMARKS.md) concerns branding, not a restriction
+on GPL use, forks or resale.
+
+Third-party libraries and separately downloaded models retain their own terms;
+see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Full notices and Murmur's
+GPL license are included in the app and DMG. Open **Help → Licenses & Credits**
+to read them offline. Your dictated text does not become GPL-licensed merely
+because you use Murmur.
 
 [Report a bug](https://github.com/BitL8-ByteShort/Murmur/issues/new?template=bug_report.yml)
 with the app version, macOS/Mac model, selected mic and speech engine, and steps

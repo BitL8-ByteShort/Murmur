@@ -113,9 +113,10 @@
     },
     {
       "path": "Moonshine/Eigen-Source-Availability.txt",
-      "sha256": "8548f6ac9f59ef1850bbc1e1fab2371c8faa17edfbc2f219ebb61584997e0ac4",
+      "sha256": "21f63094c49db4863e603b071d84d675a97db14a51c43df8aa274ce7781e60b9",
       "source": "https://github.com/moonshine-ai/moonshine/tree/234f60faa0eb388b01cdf7e60aca232af37aefda/core/third-party/Eigen",
-      "generated": true
+      "generated": true,
+      "note": "Publisher-authored source availability notice; upstream license texts remain unchanged."
     },
     {
       "path": "Moonshine/LICENSE.txt",
