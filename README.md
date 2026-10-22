@@ -1,6 +1,6 @@
 # Murmur
 
-A little space for your voice.
+![Murmur. A little space for your voice. A flock of starlings sweeps toward a coral text cursor.](docs/assets/murmur-banner.png)
 
 Murmur is a native Mac dictation app. Put your cursor in an app, use a shortcut,
 and talk. A small bar appears at the bottom of the screen, responds to your voice,
