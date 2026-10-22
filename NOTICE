@@ -1,0 +1,14 @@
+Murmur
+Copyright (c) 2026 Salty Panda LLC and contributors.
+
+Murmur's first-party code and documentation are licensed under the GNU General
+Public License, version 3 only (SPDX-License-Identifier: GPL-3.0-only).
+You may redistribute and modify this program under those terms. The program
+is provided without warranty; see LICENSE for the complete terms.
+
+Third-party libraries, optional model weights, and their notices retain their
+own licenses. See THIRD_PARTY_NOTICES.md and the bundled Licenses directory.
+
+Source code and build instructions: https://github.com/BitL8-ByteShort/Murmur
+See SOURCE.md for this release and the pinned dependency/native source locations.
+The Murmur name and logo identify the official project; see TRADEMARKS.md.

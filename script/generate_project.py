@@ -29,7 +29,7 @@ for folder in ['Sources/Murmur']:
     groups.append(add(folder, f'isa = PBXGroup; children = ({",".join(children)},); path = {folder}; sourceTree = "<group>";'))
 product = add('product', 'isa = PBXFileReference; explicitFileType = wrapper.application; path = Murmur.app; sourceTree = BUILT_PRODUCTS_DIR;')
 resource_builds = []
-for path, kind in [('Sources/Murmur/Licenses', 'folder'), ('LICENSE', 'text'), ('THIRD_PARTY_NOTICES.md', 'text'), ('Resources/Murmur.icns', 'image.icns')]:
+for path, kind in [('Sources/Murmur/Licenses', 'folder'), ('LICENSE', 'text'), ('NOTICE', 'text'), ('SOURCE.md', 'text'), ('TRADEMARKS.md', 'text'), ('THIRD_PARTY_NOTICES.md', 'text'), ('Resources/Murmur.icns', 'image.icns')]:
     ref = add('resource:' + path, f'isa = PBXFileReference; lastKnownFileType = {kind}; path = {quoted(path)}; sourceTree = "<group>";')
     groups.append(ref)
     resource_builds.append(add('resource-build:' + path, f'isa = PBXBuildFile; fileRef = {ref};'))

@@ -1,6 +1,28 @@
 # Murmur status
 
-Updated October 20, 2026.
+Updated October 22, 2026.
+
+## Open-source release
+
+Chris approved GPL-3.0-only on October 22. Version 0.2.4 (6) replaces the
+proprietary preview terms with GPLv3, removes the separate CLA for new
+contributions and includes source/build instructions and a separate brand policy.
+Third-party libraries and optional model weights keep their licenses. No speech,
+input, shortcut or paste behavior changes in this release.
+
+The default Swift checks pass, with three optional model/file checks skipped.
+All 79 third-party notice documents and four dependency pins pass verification.
+The Release archive/export, Apple notarization, stapled ticket, strict signature,
+Gatekeeper and DMG checks pass. Installed the DMG by clean bundle replacement,
+preserving the previous app locally. The signing requirement matches 0.2.3.
+Native settings show 0.2.4 · GPLv3, Mic off, Copy only off and no missing typing
+permission notice. Help → Licenses & Credits displays the bundled GPL text.
+Microphone, pause and TigerVNC paste preferences are preserved. No fresh human
+dictation retry is claimed for this licensing-only release.
+
+Pinned upstream source locations respond successfully without authentication.
+Matching source and installer assets are prepared for the v0.2.4 release.
+Historical 0.2.3 and earlier installers retain the terms bundled with those files.
 
 ## Focused-editor repair
 
@@ -35,13 +57,13 @@ app and public installer include the repair confirmed by Chris in the Codex chat
 
 ## Checkpoint
 
-Public preview 0.2.3 (5), with a Developer ID signed and Apple-notarized installer.
+Open-source release 0.2.4 (6), with a Developer ID signed and Apple-notarized installer.
 The installed app is at `/Applications/Murmur.app`. Remaining human checks are
-listed below; a public preview does not turn those checks into accepted evidence.
+listed below; open-source release does not turn those checks into accepted evidence.
 
 | Area | Current state |
 | --- | --- |
-| Repository | BitL8-ByteShort/Murmur, public distribution approved by Chris; current public preview 0.2.3 (5), including focused-editor recovery and selected-microphone isolation |
+| Repository | BitL8-ByteShort/Murmur, public distribution approved by Chris; GPL-3.0-only version 0.2.4 (6), including focused-editor recovery and selected-microphone isolation |
 | Native app | SwiftUI settings, menu bar, custom icon, signed local .app installed in Applications |
 | Visuals | Four styles in a compact 200 × 56-point floating bar: Waveform, Aura, Aura Ring and teal Particle Wave; no Aura blur; native input callback, meter capped at 60 Hz, 16 ms interpolation |
 | Appearance | Automatic hiding after completion/failure; Always on or manual show retains a 100 × 28-point idle pill with the mic off; response strength, still/reduced motion, display selection, bottom offset |
@@ -54,13 +76,13 @@ listed below; a public preview does not turn those checks into accepted evidence
 | Insertion | Native TextEdit insertion established; Chris confirmed Quick Talk pastes into the affected Codex composer after installing 0.2.3; no automated Codex readback is claimed |
 | TigerVNC | Remote Control–V default, Control–Shift–V or Command–V selectable; focus refresh triggers Mac clipboard announcement, clipboard-read acknowledgement replaces fixed waits; destination shown in transcript; actual remote dictation retry pending |
 | Privacy | No saved raw audio, no disk transcript history, no analytics/cloud fallback; current and previous attempts recoverable in memory |
-| Distribution | Developer ID signed, Apple-notarized 0.2.3 (5); strict signature, Gatekeeper, license and DMG verification passed |
+| Distribution | GPL-3.0-only 0.2.4 (6); Developer ID signing, Apple notarization, strict signature, Gatekeeper, license and DMG verification passed; source access documented |
 
 ## Accepted evidence
 
 - Public release packaging now has a repeatable Xcode archive/export/notarization
-  pipeline. The app and DMG include the existing Salty Panda proprietary preview
-  terms and all 79 dependency/model notice documents for four pinned packages.
+  pipeline. Historical 0.2.3 and earlier apps/DMGs include the former proprietary
+  preview terms and all 79 dependency/model notice documents for four pinned packages.
   The package includes no model weights, recordings, saved words or credentials.
 - Installed 0.2.2 (4) from the mounted, verified DMG using clean bundle replacement.
   Strict signature verification and Gatekeeper accept the installed app as

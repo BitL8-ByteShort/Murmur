@@ -1,87 +1,54 @@
 # Contributing to Murmur
 
-Bug reports, fixes, documentation improvements, and focused feature contributions
-are welcome. Murmur's first public preview is version 0.2.2 (build 4).
-You can fork this repository and submit a pull request without write access to
-the main repository.
-
-The owner is the only person with write access. Every contribution needs the
-owner's review and approval; see [repository access](docs/REPOSITORY_ACCESS.md).
+Bug reports, fixes, documentation, artwork and focused feature contributions
+are welcome. Murmur is open source under [GPL-3.0-only](LICENSE). You can fork
+the repository and submit a pull request without write access to the main repo.
 
 ## Report a bug
 
-[Check existing issues](https://github.com/BitL8-ByteShort/Murmur/issues),
-then use the [bug-report form](https://github.com/BitL8-ByteShort/Murmur/issues/new?template=bug_report.yml).
-Include your app version/build, Mac model and memory, macOS version, playback
-mode or speech engine, reproduction steps, expected behavior, and actual result.
-Screenshots or short clips help when they don't reveal private script text.
-Bug reports do not require a contributor agreement. Questions and feature ideas
-can use a [general issue](https://github.com/BitL8-ByteShort/Murmur/issues/new).
-
-The app uses a [proprietary license](LICENSE). Accepting contributions doesn't
-make the whole project open source. The [contributor agreement](CLA.md) lets
-you keep ownership of your work while giving Salty Panda LLC permission to
-include it in future releases, including releases with different licensing terms.
-
-## Before writing code
-
-For a substantial change, open an issue in this repository first. Explain the
-problem and the behavior you want. A small bug fix or documentation correction
-can go straight into a pull request.
-
-Keep the app focused on reading scripts near the camera. Preserve local script
-storage, local speech recognition, optional model downloads, and the existing
-playback controls unless the issue specifically calls for a change.
+Check [existing issues](https://github.com/BitL8-ByteShort/Murmur/issues), then use
+the [bug-report form](https://github.com/BitL8-ByteShort/Murmur/issues/new?template=bug_report.yml).
+Include the app version/build, Mac model, macOS version, selected microphone and
+speech engine, reproduction steps, expected behavior and what happened. Remove
+private dictated text and credentials from reports and screenshots.
 
 ## Submit a change
 
-1. Fork the repository, then create a branch from `main` in your fork.
-2. Make one focused change. Include a regression test when it proves a meaningful
-   behavior, especially for playback, speech alignment, or saved scripts.
-3. Run the checks relevant to your change. Describe what you actually tested
-   and anything you couldn't verify on your Mac.
-4. Open a pull request from your fork into this repository's `main`, using the
-   template. Explain the problem, the resulting
-   behavior, and any new dependencies or third-party material.
-5. Read [CLA.md](CLA.md) on the target branch and post its completed acceptance
-   statement from your own GitHub account. Every rights holder must be covered
-   before a maintainer can merge the contribution.
+1. For a substantial change, open an issue to discuss the problem and intended
+   behavior. Small fixes and documentation improvements can go straight to a PR.
+2. Fork the repo and create a focused branch from `main`.
+3. Keep Quick Talk, Keep Talking and bar visibility separate. Preserve local
+   recognition, explicit model downloads, target-field safety and no automatic
+   Enter/send. Keep audio work off the main actor and queues bounded.
+4. Add a regression check when it proves a meaningful behavior. Run checks
+   appropriate to the change and explain what was tested and any remaining limits.
+5. Open a pull request describing the problem, resulting behavior and any new
+   dependencies or third-party material. The owner reviews changes before merge.
 
-You keep your copyright. The agreement gives Salty Panda LLC ongoing permission
-to use, modify, distribute, and license your contribution, including in commercial
-releases. It does not promise compensation. If your employer owns your work,
-get its authorization first. Don't accept on someone else's behalf without it.
-
-Issues and ordinary bug reports do not require a CLA. Code or other creative
-material supplied in an issue must go through the contribution process before
-it is incorporated. Don't submit private dictated text, credentials, signing keys,
-or downloaded model weights.
+New contributions are submitted under GPL-3.0-only unless separately identified
+material is explicitly disclosed and accepted under compatible terms. You retain
+your copyright. Submit only work you have the right to contribute; obtain any
+required employer authorization. No separate CLA, copyright assignment or legal
+name acceptance comment is required. See [CLA.md](CLA.md) for historical context.
+Do not submit signing keys, credentials, private transcripts or model weights.
 
 ## Development checks
 
-See the [development guide](docs/DEVELOPMENT.md) for setup and speech fixtures.
-The usual checks are:
+See [Development](docs/DEVELOPMENT.md) for setup and optional speech fixtures.
 
 ```sh
 swift test
-./script/build_and_run.sh --verify
+MURMUR_SIGN_IDENTITY=- ./script/build_and_run.sh --verify
 ```
 
-Run only the checks relevant to your change. Documentation-only edits do not
-need an app rebuild. After adding Swift source files, regenerate the Xcode
-project with `python3 script/generate_project.py`.
+Documentation-only edits do not need an app rebuild. New Swift files require
+regenerating the Xcode project with `python3 script/generate_project.py`.
 
-## Maintainer merge check
+## Maintainer checks
 
-- Confirm the scope and review the change.
-- Verify the CLA acceptance against the exact version on the target branch.
-  A checked box in the PR template is a reminder, not the acceptance record.
-- Confirm that each rights holder is covered, including any employer-owned work.
-- Review disclosed third-party material and retain its required notices.
-- Record the acceptance comment links, the CLA document commit, and the final
-  contribution commits in the PR before merging. Keep that record with the
-  project history, including when squashing a PR.
-
-CLA acceptance is manual; no CLA bot checks it. Owner
-review does not verify the agreement. Do not merge a
-contribution with missing or unclear authorization.
+Review scope, implementation and relevant validation. Confirm contribution
+rights and compatibility of new third-party material; preserve its notices.
+Keep source and build instructions available with binary releases as described
+in [SOURCE.md](SOURCE.md). Signing, notarization and installation checks are
+required for each new public installer; test results alone do not prove live
+microphone or insertion behavior.
